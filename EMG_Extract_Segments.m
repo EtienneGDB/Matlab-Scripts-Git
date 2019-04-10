@@ -35,7 +35,7 @@ Muscles = {...
     } ;
 
 %iSubjects=1;
-for iSubjects = 21:length(Subjects)
+for iSubjects = 1:length(Subjects)
     %Load MVC Data
     cd(['F:\Data\IRSST\RAW\' Subjects{iSubjects} '\mvc'])
     load(['CleanData_MVC_' (Subjects{iSubjects}) '.mat']);
@@ -99,7 +99,7 @@ for iSubjects = 21:length(Subjects)
     
     %iFiles=1;
     % Load EMG data
-    for iFiles = 21:length(FileNames)
+    for iFiles = 1:length(FileNames)
         cd(['H:\Bureau\Etienne\Extracted data\Fatigue\DataSelec'])
         load(['RawEMG_Muscles_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat']);
         Data = DataSelec ;
@@ -145,32 +145,6 @@ for iSubjects = 21:length(Subjects)
 %             subplot(3,4,iMuscles) ; plot(EMGBL(:,iMuscles)) ; title(Muscles{iMuscles},'interpreter','none')
 %         end
         
-%         % Plot FFT
-%         T = 1/Freq;             % Sampling period       
-%         L = length(EMGBL(:,iMuscles));             % Length of signal
-%         t = (0:L-1)*T;        % Time vector
-% 
-%         figure
-%         for iM=1:length(Muscles)
-%             Y = fft(EMGBL(:,iM));
-% 
-%             P2 = abs(Y/L);
-%             P1 = P2(1:L/2+1);
-%             P1(2:end-1) = 2*P1(2:end-1);
-% 
-%             f = Freq*(0:(L/2))/L;
-%             subplot(3,4,iM); plot(f,P1) 
-%             title(['Part' (num2str(iSubjects)) '_' (Muscles{iM})])
-%             xlabel('f (Hz)')
-%             ylabel('|P1(f)|')
-%         end
-        
-        %% Data analysis
-        %% EMG activation level
-%         [b,a] = butter(2,2*9/Freq) ; % Parametre du filtre Low pass 9 Hz
-%         EMG_envelop = filtfilt(b,a,abs(EMGBL)) ; % On ne garde que les valeurs absolues de EMGBL donc signal redressé au-dessus de 0
-%         plot(EMG_envelop)
-        
         % EMG normalization
         Normalization = [];
         for iNormalization = 1:length(Muscles)
@@ -179,83 +153,20 @@ for iSubjects = 21:length(Subjects)
 %         figure ; plot(Normalization(:,:))
         
         % Sum normalized signals
+        SumNorm = [];
         for iSig = 1:length(Normalization)
-            SumNorm(iSig) = sum(Normalization(iSig,4));... À modifier en fonction
+            SumNorm(iSig) = sum(Normalization(iSig,[1,4,6,7]));... À modifier en fonction
         end
 %         figure ; plot(SumNorm)
 
         % Dection of activity
-        Seg = ActivityDetection2(SumNorm, Normalization, 1000, 2000, Muscles, FileNames{2,iFiles}(1), 1);
+        [Seg Env] = ActivityDetection2(SumNorm, Normalization, 1000, 2000, Muscles, FileNames{2,iFiles}(1), 1);
         pause
         
-        % Cut movements
-        EMG_envelop_trials = [] ; EMG_cycles = [] ;
-        for iMovements = 1:length(Seg)
-            Movement = Normalization(Seg(iMovements,1):Seg(iMovements,2),:) ;
-            EMG_cycles{1,iMovements} = EMGBL(Seg(iMovements,1):(Seg(iMovements,2)),:) ;
-            
-            % Interpolation
-            EMG_envelop_trials(:,:,iMovements) = interp1(1:length(Movement),Movement,1:length(Movement)/500:length(Movement)) ;
-        end
-%         figure ; plot(mean(EMG_envelop_trials,3)) ; legend(Muscles{:,1}) ;
-%         plot(EMG_cycles{1}(:,1))
-%         plot(EMGBL(:,1))
-        
-        %% EMG Median frequency
-        % TFR
-        FreqMin = 1 ;
-        FreqMax = 400 ;
-        Resolution = 1 ;... pas de 1Hz
-        WaveNumber = 7 ;
-        Args = WaveletParameters(FreqMin,FreqMax,Resolution,WaveNumber,Freq) ;
-        FreqRange = length(FreqMin:Resolution:FreqMax) ;
-        Nb_Interp_Pnts = 1 ;
-                
-        % Compute TFR
-        % Cut movements
-        TFR = [] ;
-        for iMovements = 1:length(Seg)
-            for iM = 1:length(Muscles)
-                disp('.')
-                if sum(EMGBL(:,iM))~=0
-                    tic
-                    [norm, Time, Wave_FreqS] = TimeFreqTransform(EMGBL(:,iM),Freq,Args,Nb_Interp_Pnts) ;
-                    toc
-                    TFR.TFR.(Muscles{iM}) = norm ;
-                    TFR.MedianFreq.(Muscles{iM})(:,:,iMovements) = Compute_Median_Frequency(norm,Wave_FreqS) ;
-                else
-                    TFR.TFR.(Muscles{iM})(:,:,iMovements) = nan(400,500) ;
-                    TFR.MedianFreq.(Muscles{iM})(:,:,iMovements) = nan(500,1)  ;
-                end
-            end
-        end
-        
-        TFR.freq = Wave_FreqS ;
-        TFR.time = 1:500 ;
-        TFR.muscles = Muscles ;
-        TFR.Seg = Seg ;
-        MedianFreq.muscles = Muscles ;
-        
-%         figure
-%         imagesc(TFR.TFR.(Muscles{iM})(:,:,1));
-
-        % Data saving
-        cd(['E:\Bureau\Etienne\Extracted data\Fatigue'])
-        save(['CleanData_TFR_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'],'TFR')
-        save(['CleanData_EMGenvelop_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'],'EMG_envelop')        
-
-        close all
-
-        TFR = [];
-        EMG = [];
-        EMG_cycles = [];
-        EMG_envelop = [];
-        EMG_envelop_trials = [];
-        EMGBL = [];
-        EMGBP = [];
-        EMGBS = [];
-        Movement = [];
-        Normalization = [];
+        cd(['H:\Bureau\Etienne\Extracted data\Fatigue\Signal Segments'])
+        save(['Seg_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'],'Seg')
+        save(['Env_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'],'Env')
     end
-    
-end    
+    close all
+    clear functions
+end
