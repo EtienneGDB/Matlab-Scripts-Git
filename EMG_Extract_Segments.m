@@ -35,7 +35,7 @@ Muscles = {...
     } ;
 
 %iSubjects=1;
-for iSubjects = 1:length(Subjects)
+for iSubjects = 2:length(Subjects)
     %Load MVC Data
     cd(['F:\Data\IRSST\RAW\' Subjects{iSubjects} '\mvc'])
     load(['CleanData_MVC_' (Subjects{iSubjects}) '.mat']);
@@ -99,7 +99,7 @@ for iSubjects = 1:length(Subjects)
     
     %iFiles=1;
     % Load EMG data
-    for iFiles = 1:length(FileNames)
+    for iFiles = 14:length(FileNames)
         cd(['H:\Bureau\Etienne\Extracted data\Fatigue\DataSelec'])
         load(['RawEMG_Muscles_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat']);
         Data = DataSelec ;
@@ -155,7 +155,7 @@ for iSubjects = 1:length(Subjects)
         % Sum normalized signals
         SumNorm = [];
         for iSig = 1:length(Normalization)
-            SumNorm(iSig) = sum(Normalization(iSig,[1,4,6,7]));... À modifier en fonction
+            SumNorm(iSig) = sum(Normalization(iSig,[4]));... À modifier en fonction
         end
 %         figure ; plot(SumNorm)
 
@@ -163,6 +163,12 @@ for iSubjects = 1:length(Subjects)
         [Seg Env] = ActivityDetection2(SumNorm, Normalization, 1000, 2000, Muscles, FileNames{2,iFiles}(1), 1);
         pause
         
+        % Correction Manuelle
+%         Env(1:17400) = 0;
+%         Env(1267:9315) = max(Env);
+        Env(28000:40760) = max(Env);
+        figure ; plot(SumNorm) ; hold on ; plot(Env)
+
         cd(['H:\Bureau\Etienne\Extracted data\Fatigue\Signal Segments'])
         save(['Seg_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'],'Seg')
         save(['Env_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'],'Env')
