@@ -35,14 +35,14 @@ Muscles = {...
     } ;
 
 %iSubjects=1;
-for iSubjects = 2:length(Subjects)
+for iSubjects = 31
     %Load MVC Data
     cd(['F:\Data\IRSST\RAW\' Subjects{iSubjects} '\mvc'])
     load(['CleanData_MVC_' (Subjects{iSubjects}) '.mat']);
 
     % Plus de place sur serveur F donc les données ne sont pas au même
     % endroit pour tout le monde
-    if ismember(iSubjects,[2:16 18:19 21:length(Subjects)])
+    if ismember(iSubjects,[2:16 18:19 21:24 26:length(Subjects)])
         FolderContent = dir(['F:\Data\IRSST\RAW\' Subjects{iSubjects} '\fatigue']);
         FileNames = {...
         FolderContent(3:length(FolderContent)).name...
@@ -62,10 +62,10 @@ for iSubjects = 2:length(Subjects)
             pathData = ['H:\Projet_ExpertsNovices\data\raw\2017-11-10\nicl\fatigue'];
         end        
         if iSubjects == 25
-            pathData = ['H:\Projet_ExpertsNovices\data\raw\2017-12-12\jono\fatigue'];
+            pathData = ['H:\Projet_ExpertsNovices\data\raw\2017-12-12\pasd\fatigue'];
         end
         if iSubjects == 28
-            pathData = ['H:\Projet_ExpertsNovices\data\raw\2017-09-28\jono\fatigue'];
+            pathData = ['H:\Projet_ExpertsNovices\data\raw\2017-09-28\samc\fatigue'];
         end
         FolderContent = dir(pathData);
         FileNames = {...
@@ -99,7 +99,7 @@ for iSubjects = 2:length(Subjects)
     
     %iFiles=1;
     % Load EMG data
-    for iFiles = 14:length(FileNames)
+    for iFiles = 1:length(FileNames)
         cd(['H:\Bureau\Etienne\Extracted data\Fatigue\DataSelec'])
         load(['RawEMG_Muscles_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat']);
         Data = DataSelec ;
@@ -155,24 +155,32 @@ for iSubjects = 2:length(Subjects)
         % Sum normalized signals
         SumNorm = [];
         for iSig = 1:length(Normalization)
-            SumNorm(iSig) = sum(Normalization(iSig,[4]));... À modifier en fonction
+            SumNorm(iSig) = sum(Normalization(iSig,[4,1,7]));... À modifier en fonction
         end
 %         figure ; plot(SumNorm)
 
         % Dection of activity
-        [Seg Env] = ActivityDetection2(SumNorm, Normalization, 1000, 2000, Muscles, FileNames{2,iFiles}(1), 1);
+        [Seg Env] = ActivityDetection2(SumNorm, Normalization, 1000, 2000, Muscles, FileNames{2,iFiles}(1), FileNames{2,iFiles}, 1);
         pause
         
         % Correction Manuelle
-%         Env(1:17400) = 0;
-%         Env(1267:9315) = max(Env);
-        Env(28000:40760) = max(Env);
-        figure ; plot(SumNorm) ; hold on ; plot(Env)
+%         Env(43130:45100) = 0;
+%         Env(17640:28190) = max(Env);
+%         Env(32500:40000) = max(Env);
+%         Env(103100:110700) = max(Env);
+%         Env(10750:19020) = max(Env);        
+%         figure ; plot(SumNorm) ; hold on ; plot(Env)
+        
+%         Seg(7,:) = [];
+%         Seg = [];
+%         Env = [];
 
         cd(['H:\Bureau\Etienne\Extracted data\Fatigue\Signal Segments'])
         save(['Seg_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'],'Seg')
         save(['Env_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'],'Env')
+        
+        close all
+        clear functions
     end
-    close all
-    clear functions
+
 end
