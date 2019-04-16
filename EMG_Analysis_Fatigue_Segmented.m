@@ -100,7 +100,7 @@ for iSubjects = 1
     
     %iFiles=1;
     % Load EMG data
-    for iFiles = 2:length(FileNames)
+    for iFiles = 7:length(FileNames)
         cd(['H:\Bureau\Etienne\Extracted data\Fatigue\DataSelec'])
         load(['RawEMG_Muscles_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat']);
         Data = DataSelec ;
@@ -216,7 +216,7 @@ for iSubjects = 1
             % Create data for boxplot Median Freq of segments on the same graph
             Seg_MedianFreq = [];
             grp = [];
-            figure;
+            figure(1);
             for iSeg = 1:length(Seg)
 %                 Seg_MedianFreq{iSeg} = TFR.MedianFreq.(Muscles{iM})(Seg(iSeg,1):Seg(iSeg,2),:);
                 a = transpose(TFR.MedianFreq.(Muscles{iM})(Seg(iSeg,1):Seg(iSeg,2),:));
@@ -242,13 +242,13 @@ for iSubjects = 1
                 xlabel('f (Hz)')
                 ylabel('|P1(f)|')
             end
-            figure;
+            figure(2);
             subplot(3,1,1) ; imagesc(TFR.TFR.(Muscles{iM})(:,:)); title([FileNames{2,iFiles} '__' Subjects{iSubjects} '__' Muscles{iM}])
 %             subplot(3,1,2) ; plot(TFR.MedianFreq.(Muscles{iM})(:,:),'.')
             subplot(3,1,2) ; plot(Normalization(:,iM))
             subplot(3,1,3) ; boxplot(Seg_MedianFreq,grp)
             pause
-            close all
+%             close all
         end
 
         % Data saving
