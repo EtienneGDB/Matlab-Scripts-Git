@@ -100,7 +100,7 @@ for iSubjects = 1
     
     %iFiles=1;
     % Load EMG data
-    for iFiles = 2:length(FileNames)
+    for iFiles = 1:length(FileNames)
         cd(['H:\Bureau\Etienne\Extracted data\Fatigue\DataSelec'])
         load(['RawEMG_Muscles_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat']);
         Data = DataSelec ;
@@ -238,7 +238,7 @@ for iSubjects = 1
             
                 subplot(2,length(Seg)/2,iSeg); plot(f,P1) 
             
-                title(['FFT_Seg_' (num2str(iSeg)) '__' (Muscles{iM})])
+                title(['FFT_Seg' (num2str(iSeg)) '_' (Muscles{iM})])
                 xlabel('f (Hz)')
                 ylabel('|P1(f)|')
             end
@@ -248,15 +248,14 @@ for iSubjects = 1
             subplot(3,1,2) ; plot(Normalization(:,iM))
             subplot(3,1,3) ; boxplot(Seg_MedianFreq,grp)
             pause
-            close all
         end
 
         % Data saving
-        cd(['H:\Bureau\Etienne\Extracted data\Fatigue\TFR'])
+        cd(['E:\Bureau\Etienne\Extracted data\Fatigue'])
         save(['CleanData_TFR_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'],'TFR')
+        save(['CleanData_EMGenvelop_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'],'EMG_envelop')        
 
-        cd(['H:\Bureau\Etienne\Extracted data\Fatigue\MedianFreq'])
-        save(['TFR_MedianFreq_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'],'TFR_MedianFreq')
+        close all
 
         TFR = [];
         EMG = [];
@@ -268,7 +267,6 @@ for iSubjects = 1
         EMGBS = [];
         Movement = [];
         Normalization = [];
-        clear functions
     end
     
 end    
