@@ -100,7 +100,7 @@ for iSubjects = 1
     
     %iFiles=1;
     % Load EMG data
-    for iFiles = 7:length(FileNames)
+    for iFiles = 11:length(FileNames)
         cd(['H:\Bureau\Etienne\Extracted data\Fatigue\DataSelec'])
         load(['RawEMG_Muscles_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat']);
         Data = DataSelec ;
@@ -236,7 +236,7 @@ for iSubjects = 1
 
                 f = Freq*(0:(L/2))/L;
             
-                subplot(2,length(Seg)/2,iSeg); plot(f,P1) 
+                subplot(2,round(length(Seg)/2),iSeg); plot(f,P1) 
             
                 title(['FFT_Seg_' (num2str(iSeg)) '__' (Muscles{iM})])
                 xlabel('f (Hz)')
