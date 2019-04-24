@@ -55,39 +55,26 @@ Trials = {...
     's_u_';...
     };
 
-TableData = [];
-for iSubjects = 1:2
-    for iTrials = 1:length(Trials)
-        for iM = 1:length(Muscles)
-%             MeanMedianFreqSeg.(Subjects{1,iSubjects}).(Trials{iTrials}).(Muscles{iM}) = [];
-%             MeanMedianFreqTrial.(Subjects{1,iSubjects}).(Trials{iTrials}).(Muscles{iM}) = [];
-% %             TableMeanMedianFreqSeg.(Trials{iTrials}).(Muscles{iM}) = [];
-%             TableMeanMedianFreqSeg.(Muscles{iM}) = [];
-%             TableMeanMedianFreqTrial.(Muscles{iM}) = [];
-%             TableMeanMedianFreqPart.(Muscles{iM}) = [];
-%             MedianFreqMuscles.(Subjects{1,iSubjects}).(Trials{iTrials}).(Muscles{iM}) = [];
-            TableData.(Muscles{iM}) = [];
-        end
-    end
-end
-
+% Load Median Freq
+% TFR = [];
+% Seg = [];
 tic
 varInc = 1;
 for iSubjects = 1:2
     for iTrials = 1:length(Trials)
         [strcTFR,strcSeg] = LoadTrials(iSubjects, Subjects{1,iSubjects}, Trials{iTrials});
         
-        if Trials{iTrials}(1) == 'l'
+        if Trials(iTrials)1) == 'l'
             C1 = 1;
-        elseif Trials{iTrials}(1) == 'm'
+        elseif Trials(iTrials)(1) == 'm'
             C1 = 2;
-        elseif Trials{iTrials}(1) == 's'
+        elseif Trials(iTrials)(1) == 's'
             C1 = 3;
         end
         
-        if Trials{iTrials}(3) == 'd'
+        if Trials(iTrials)(3) == 'd'
             C2 = 1;
-        elseif Trials{iTrials}(3) == 'u'
+        elseif Trials(iTrials)(3) == 'u'
             C2 = 2;
         end
         
@@ -119,7 +106,29 @@ end
 toc
 
 %% Moyenne de la fréquence médiane par segment (variable dépendante)
-
+% Déclare les variables
+% MeanMedianFreqSeg = [];... Retourne la fréquence médiane moyenne de chaque muscle par segment pour chaque participant
+% MeanMedianFreqTrial = [];... Retourne la fréquence médiane moyenne de chaque muscle par essai pour chaque participant
+% % TableMeanMedianFreqSeg = [];... Retourne la fréquence médiane moyenne de chaque muscle par segment dans un vecteur pour ANOVA
+% TableMeanMedianFreqSeg = [];... Retourne la fréquence médiane moyenne de chaque muscle par segment dans un vecteur pour ANOVA
+% TableMeanMedianFreqTrial = [];... Retourne la fréquence médiane moyenne de chaque muscle par essai dans un vecteur pour ANOVA
+% TableMeanMedianFreqPart = [];... Retourne la fréquence médiane moyenne de chaque muscle par participant dans un vecteur pour ANOVA
+% MedianFreqMuscles = [];... Retourne l'ensemble des fréquence médiane de chaque muscle par segment (boxplot)
+TableData = [];
+for iSubjects = 1:2
+    for iTrials = 1:length(Trials)
+        for iM = 1:length(Muscles)
+%             MeanMedianFreqSeg.(Subjects{1,iSubjects}).(Trials{iTrials}).(Muscles{iM}) = [];
+%             MeanMedianFreqTrial.(Subjects{1,iSubjects}).(Trials{iTrials}).(Muscles{iM}) = [];
+% %             TableMeanMedianFreqSeg.(Trials{iTrials}).(Muscles{iM}) = [];
+%             TableMeanMedianFreqSeg.(Muscles{iM}) = [];
+%             TableMeanMedianFreqTrial.(Muscles{iM}) = [];
+%             TableMeanMedianFreqPart.(Muscles{iM}) = [];
+%             MedianFreqMuscles.(Subjects{1,iSubjects}).(Trials{iTrials}).(Muscles{iM}) = [];
+            TableData.(Muscles{iM}) = [];
+        end
+    end
+end
 
 iSubjects=1;
 iM=1;
