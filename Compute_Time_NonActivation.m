@@ -37,7 +37,7 @@ end
 
 TimeData = [];
 varInc = 1;
-for iSubjects = 21:length(Subjects)
+for iSubjects = 1:length(Subjects)
     % Plus de place sur serveur F donc les données ne sont pas au même
     % endroit pour tout le monde
     if ismember(iSubjects,[2:16 18:19 21:24 26:length(Subjects)])
@@ -98,6 +98,12 @@ for iSubjects = 21:length(Subjects)
     for iFiles = 1:length(FileNames)
         cd(['H:\Bureau\Etienne\Extracted data\Fatigue\Signal Segments'])
         load(['Seg_' (FileNames{2,iFiles}) '_' (Subjects{1,iSubjects}) '.mat'])
+
+        SegNonAct = [];
+        for iSeg = 1:length(Seg)-1
+            SegNonAct(iSeg,1) = Seg(iSeg,2);
+            SegNonAct(iSeg,2) = Seg(iSeg+1,1);
+        end
         
         if FileNames{2,iFiles}(1) == 'l'
             C1 = 1;
@@ -113,30 +119,27 @@ for iSubjects = 21:length(Subjects)
             C2 = 2;
         end
         
-        for iSeg = 1:length(Seg)
+        for iSeg = 1:length(SegNonAct)
             TimeData(varInc,1) = iSubjects;
             TimeData(varInc,2) = Subjects{3,iSubjects};
             TimeData(varInc,3) = C1;
             TimeData(varInc,4) = C2;
             TimeData(varInc,5) = str2num(FileNames{2,iFiles}(5));
             TimeData(varInc,6) = iSeg;
-            TimeData(varInc,7) = (Seg(iSeg,2)-Seg(iSeg,1))/2000;
+            TimeData(varInc,7) = (SegNonAct(iSeg,2)-SegNonAct(iSeg,1))/2000;
             varInc = varInc + 1;
         end
     end
 end
 
 VarNames = {'Participant','Expertise','BoxSize','UpDown','Trial','Seg','Time'};
-save('H:\Bureau\Etienne\Extracted data\TableData_LMM.mat','TimeData')
+save('H:\Bureau\Etienne\Extracted data\Time_NonActivation.mat','TimeData')
 save('H:\Bureau\Etienne\Extracted data\VarNames_LMM.mat','VarNames')
 
 
-boxplot(TimeData(:,6),TimeData(:,2))
+boxplot(TimeData(:,7),TimeData(:,6))
 
-%% Linear Mixed Model
-% Appelle le code R Ancova_EEG
-cd('C:\Program Files\R\R-3.5.3\bin\x64\')
-system('Rscript.exe H:\Bureau\Etienne\MATLAB\Functions\R_Function\LMM_Audrey.R') ;
+
 
 
 
