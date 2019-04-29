@@ -192,7 +192,7 @@ for iSubjects = 1%:length(Subjects)
         TFR = [] ;
         for iM = 1:length(Muscles)
             disp('.')
-            if sum(Normalization(:,iM))~=0
+            if sum(Normalization(:,iM))~=0 & isnan(sum(Normalization(:,iM)))==0
                 tic
                 [norm, Time, Wave_FreqS] = TimeFreqTransform(Normalization(:,iM),Freq,Args,Nb_Interp_Pnts) ;
                 toc
