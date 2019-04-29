@@ -36,7 +36,7 @@ Muscles = {...
     } ;
 
 %iSubjects=1;
-for iSubjects = 1
+for iSubjects = 1%:length(Subjects)
     %Load MVC Data
     cd(['F:\Data\IRSST\RAW\' Subjects{iSubjects} '\mvc'])
     load(['CleanData_MVC_' (Subjects{iSubjects}) '.mat']);
@@ -63,10 +63,10 @@ for iSubjects = 1
             pathData = ['H:\Projet_ExpertsNovices\data\raw\2017-11-10\nicl\fatigue'];
         end        
         if iSubjects == 25
-            pathData = ['H:\Projet_ExpertsNovices\data\raw\2017-12-12\jono\fatigue'];
+            pathData = ['H:\Projet_ExpertsNovices\data\raw\2017-12-12\pasd\fatigue'];
         end
         if iSubjects == 28
-            pathData = ['H:\Projet_ExpertsNovices\data\raw\2017-09-28\jono\fatigue'];
+            pathData = ['H:\Projet_ExpertsNovices\data\raw\2017-09-28\samc\fatigue'];
         end
         FolderContent = dir(pathData);
         FileNames = {...
@@ -100,12 +100,12 @@ for iSubjects = 1
     
     %iFiles=1;
     % Load EMG data
-    for iFiles = 11:length(FileNames)
+    for iFiles = 1:length(FileNames)
         cd(['H:\Bureau\Etienne\Extracted data\Fatigue\DataSelec'])
         load(['RawEMG_Muscles_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat']);
         Data = DataSelec ;
         Freq = 2000 ;
-
+        
         EMG = [] ;
         % EMG
         for iMuscles = 1:size(Muscles,1)
@@ -157,22 +157,25 @@ for iSubjects = 1
         for iNormalization = 1:length(Muscles)
             Normalization (:,iNormalization) = EMGBL(:,iNormalization)./EMG_max(1,iNormalization)*100;
         end
-%         figure ; plot(Normalization(:,:))
+%         figure ; plot(Normalization(:,1))
         
         % Dection of activity
         cd(['H:\Bureau\Etienne\Extracted data\Fatigue\Signal Segments'])
         load(['Seg_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'])
+%         load(['Env_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'])
+%         hold on
+%         plot(Env)
         
-        % Cut movements
-        EMG_envelop_trials = [] ; EMG_cycles = [] ;
-        for iMovements = 1:length(Seg)
-            Movement = Normalization(Seg(iMovements,1):Seg(iMovements,2),:) ;
-            EMG_cycles{1,iMovements} = Normalization(Seg(iMovements,1):(Seg(iMovements,2)),:) ;
-            
-            % Interpolation
-            EMG_envelop_trials(:,:,iMovements) = interp1(1:length(Movement),Movement,1:length(Movement)/500:length(Movement)) ;
-        end
-%         plot(EMG_cycles{1})
+%         % Cut movements
+%         EMG_envelop_trials = [] ; EMG_cycles = [] ;
+%         for iMovements = 1:length(Seg)
+%             Movement = Normalization(Seg(iMovements,1):Seg(iMovements,2),:) ;
+%             EMG_cycles{1,iMovements} = Normalization(Seg(iMovements,1):(Seg(iMovements,2)),:) ;
+%             
+%             % Interpolation
+%             EMG_envelop_trials(:,:,iMovements) = interp1(1:length(Movement),Movement,1:length(Movement)/500:length(Movement)) ;
+%         end
+% %         plot(EMG_cycles{1})
         
         %% EMG Median frequency
         % TFR
@@ -191,13 +194,15 @@ for iSubjects = 1
             disp('.')
             if sum(Normalization(:,iM))~=0
                 tic
-                [norm, Time, Wave_FreqS] = TimeFreqTransform(EMGBL(:,iM),Freq,Args,Nb_Interp_Pnts) ;
+                [norm, Time, Wave_FreqS] = TimeFreqTransform(Normalization(:,iM),Freq,Args,Nb_Interp_Pnts) ;
                 toc
                 TFR.TFR.(Muscles{iM}) = norm ;
                 TFR.MedianFreq.(Muscles{iM})(:,:,:) = Compute_Median_Frequency(norm,Wave_FreqS) ;
+                TFR.SpectralEntropy.(Muscles{iM})(:,:,:) = Compute_Spectral_Entropy(norm, Wave_FreqS) ;
             else
-                TFR.TFR.(Muscles{iM})(:,:,iMovements) = nan(400,500) ;
-                TFR.MedianFreq.(Muscles{iM})(:,:,iMovements) = nan(500,1)  ;
+                TFR.TFR.(Muscles{iM})(:,:,:) = nan(400,500) ;
+                TFR.MedianFreq.(Muscles{iM})(:,:,:) = nan(500,1)  ;
+                TFR.SpectralEntropy.(Muscles{iM})(:,:,:) = nan(500,1)  ;
             end
         end
         
@@ -211,58 +216,64 @@ for iSubjects = 1
         TFR_MedianFreq.(['MedianFreq']) = TFR.MedianFreq ;
         TFR_MedianFreq.(['NumberOfSeg']) = length(TFR.Seg);
         
-        % Plot TFR/Median_Freq/FFT
-        for iM=1:length(Muscles)
-            % Create data for boxplot Median Freq of segments on the same graph
-            Seg_MedianFreq = [];
-            grp = [];
-            figure(1);
-            for iSeg = 1:length(Seg)
-%                 Seg_MedianFreq{iSeg} = TFR.MedianFreq.(Muscles{iM})(Seg(iSeg,1):Seg(iSeg,2),:);
-                a = transpose(TFR.MedianFreq.(Muscles{iM})(Seg(iSeg,1):Seg(iSeg,2),:));
-                Seg_MedianFreq = [Seg_MedianFreq a];
-                b = repmat(iSeg,1,length(a));
-                grp = [grp b];
-            
-                T = 1/Freq;             % Sampling period       
-                L = length(Normalization(Seg(iSeg,1):Seg(iSeg,2),iMuscles));             % Length of signal
-                t = (0:L-1)*T;        % Time vector
+        TFR_SpectralEntropy = {};
+        TFR_SpectralEntropy.(['SpectralEntropy']) = TFR.SpectralEntropy ;
+        TFR_SpectralEntropy.(['NumberOfSeg']) = length(TFR.Seg);
 
-                Y = fft(Normalization(Seg(iSeg,1):Seg(iSeg,2),iM));
-
-                P2 = abs(Y/L);
-                P1 = P2(1:L/2+1);
-                P1(2:end-1) = 2*P1(2:end-1);
-
-                f = Freq*(0:(L/2))/L;
-            
-                subplot(2,round(length(Seg)/2),iSeg); plot(f,P1) 
-            
-                title(['FFT_Seg_' (num2str(iSeg)) '__' (Muscles{iM})])
-                xlabel('f (Hz)')
-                ylabel('|P1(f)|')
-            end
-            figure(2);
-            subplot(3,1,1) ; imagesc(TFR.TFR.(Muscles{iM})(:,:)); title([FileNames{2,iFiles} '__' Subjects{iSubjects} '__' Muscles{iM}])
-%             subplot(3,1,2) ; plot(TFR.MedianFreq.(Muscles{iM})(:,:),'.')
-            subplot(3,1,2) ; plot(Normalization(:,iM))
-            subplot(3,1,3) ; boxplot(Seg_MedianFreq,grp)
-            pause
-%             close all
-        end
+%         % Plot TFR/Median_Freq/FFT
+%         for iM=1:length(Muscles)
+%             % Create data for boxplot Median Freq of segments on the same graph
+%             Seg_MedianFreq = [];
+%             grp = [];
+%             figure(1);
+%             for iSeg = 1:length(Seg)
+% %                 Seg_MedianFreq{iSeg} = TFR.MedianFreq.(Muscles{iM})(Seg(iSeg,1):Seg(iSeg,2),:);
+%                 a = transpose(TFR.MedianFreq.(Muscles{iM})(Seg(iSeg,1):Seg(iSeg,2),:));
+%                 Seg_MedianFreq = [Seg_MedianFreq a];
+%                 b = repmat(iSeg,1,length(a));
+%                 grp = [grp b];
+%             
+%                 T = 1/Freq;             % Sampling period       
+%                 L = length(Normalization(Seg(iSeg,1):Seg(iSeg,2),iMuscles));             % Length of signal
+%                 t = (0:L-1)*T;        % Time vector
+% 
+%                 Y = fft(Normalization(Seg(iSeg,1):Seg(iSeg,2),iM));
+% 
+%                 P2 = abs(Y/L);
+%                 P1 = P2(1:L/2+1);
+%                 P1(2:end-1) = 2*P1(2:end-1);
+% 
+%                 f = Freq*(0:(L/2))/L;
+%             
+%                 subplot(2,round(length(Seg)/2),iSeg); plot(f,P1) 
+%             
+%                 title(['FFT_Seg_' (num2str(iSeg)) '__' (Muscles{iM})])
+%                 xlabel('f (Hz)')
+%                 ylabel('|P1(f)|')
+%             end
+%             figure(2);
+%             subplot(3,1,1) ; imagesc(TFR.TFR.(Muscles{iM})(:,:)); title([FileNames{2,iFiles} '__' Subjects{iSubjects} '__' Muscles{iM}])
+% %             subplot(3,1,2) ; plot(TFR.MedianFreq.(Muscles{iM})(:,:),'.')
+%             subplot(3,1,2) ; plot(Normalization(:,iM))
+%             subplot(3,1,3) ; boxplot(Seg_MedianFreq,grp)
+% %             pause
+% %             close all
+%         end
 
         % Data saving
-        cd(['H:\Bureau\Etienne\Extracted data\Fatigue\TFR'])
-        save(['CleanData_TFR_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'],'TFR')
+%         cd(['H:\Bureau\Etienne\Extracted data\Fatigue\TFR'])
+%         save(['CleanData_TFR_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'],'TFR')
 
         cd(['H:\Bureau\Etienne\Extracted data\Fatigue\MedianFreq'])
         save(['TFR_MedianFreq_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'],'TFR_MedianFreq')
 
+        cd(['H:\Bureau\Etienne\Extracted data\Fatigue\SpectralEntropy'])
+        save(['TFR_SpectralEntropy_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'],'TFR_SpectralEntropy')
+
         TFR = [];
+        TFR_MedianFreq = [];
+        TFR_SpectralEntropy = [];
         EMG = [];
-        EMG_cycles = [];
-        EMG_envelop = [];
-        EMG_envelop_trials = [];
         EMGBL = [];
         EMGBP = [];
         EMGBS = [];
