@@ -36,7 +36,7 @@ Muscles = {...
     } ;
 
 %iSubjects=1;
-for iSubjects = 3%:length(Subjects)
+for iSubjects = 21:length(Subjects)
     %Load MVC Data
     cd(['F:\Data\IRSST\RAW\' Subjects{iSubjects} '\mvc'])
     load(['CleanData_MVC_' (Subjects{iSubjects}) '.mat']);
@@ -100,7 +100,7 @@ for iSubjects = 3%:length(Subjects)
     
     %iFiles=1;
     % Load EMG data
-    for iFiles = 12:length(FileNames)
+    for iFiles = 1:length(FileNames)
         cd(['H:\Bureau\Etienne\Extracted data\Fatigue\DataSelec'])
         load(['RawEMG_Muscles_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat']);
         Data = DataSelec ;
@@ -162,6 +162,44 @@ for iSubjects = 3%:length(Subjects)
         % Dection of activity
         cd(['H:\Bureau\Etienne\Extracted data\Fatigue\Signal Segments'])
         load(['Seg_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'])
-%         load(['Env_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'])
-%         hold on
-%         plot(Env)
+        
+        % Compute Activity (feature)
+        Activity = [];
+        for iM = 1:length(Muscles)
+            Activity.Trial.(Muscles{iM}) = var(Normalization(:,iM));
+            for iSeg = 1:length(Seg)
+                Activity.Seg.(Muscles{iM})(:,iSeg) = var(Normalization(Seg(iSeg,1):Seg(iSeg,2),iM));
+            end     
+        end
+        
+        % Compute Mobility (feature)
+        Mobility = [];
+        for iM = 1:length(Muscles)
+            % Derive Signal
+            axT = [1:length(Normalization(:,iM))]/Freq;
+            Derivative = diff(Normalization(:,iM))./diff(axT(1:2));
+
+            Mobility.Trial.(Muscles{iM}) = var(Derivative)/var(Normalization(:,iM));
+            
+            for iSeg = 1:length(Seg)
+                Mobility.Seg.(Muscles{iM})(:,iSeg) = var(Derivative(Seg(iSeg,1):Seg(iSeg,2)))/var(Normalization(Seg(iSeg,1):Seg(iSeg,2),iM));
+            end     
+        end
+        
+%         % Compute Sample Entropy (feature)
+%         addpath(genpath('C:\Users\p1098713\Documents\3.MATLAB\Fonctions\Entropy_measures'))
+%         addpath(genpath('C:\Users\p1098713\Documents\3.MATLAB\Fonctions\SampEn'))
+%         
+%         SampEn(2,0.2*std(Normalization(:,iM)),Normalization(:,iM),1)
+%         
+%         SampleEn(Normalization(:,iM),2,0.2*std(Normalization(:,iM)))
+
+
+        cd(['H:\Bureau\Etienne\Extracted data\Fatigue\Activity'])
+        save(['Activity' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'],'Activity')
+
+        cd(['H:\Bureau\Etienne\Extracted data\Fatigue\Mobility'])
+        save(['Mobility' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'],'Mobility')
+
+    end
+end
