@@ -37,7 +37,7 @@ end
 
 TimeData = [];
 varInc = 1;
-for iSubjects = 1:length(Subjects)
+for iSubjects = 21:length(Subjects)
     % Plus de place sur serveur F donc les données ne sont pas au même
     % endroit pour tout le monde
     if ismember(iSubjects,[2:16 18:19 21:24 26:length(Subjects)])
@@ -132,9 +132,9 @@ for iSubjects = 1:length(Subjects)
     end
 end
 
-VarNames = {'Participant','Expertise','BoxSize','UpDown','Trial','Seg','Time'};
+VarNamesTime = {'Participant','Expertise','BoxSize','UpDown','Trial','Seg','Time'};
 save('H:\Bureau\Etienne\Extracted data\Time_NonActivation.mat','TimeData')
-save('H:\Bureau\Etienne\Extracted data\VarNames_LMM.mat','VarNames')
+save('H:\Bureau\Etienne\Extracted data\VarNamesTime.mat','VarNamesTime')
 
 
 boxplot(TimeData(:,7),TimeData(:,6))

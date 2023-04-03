@@ -34,7 +34,7 @@ Muscles = {...
     } ;
 
 %iSubjects=1;
-for iSubjects = 23:length(Subjects)
+for iSubjects = 2:length(Subjects)
     %Load MVC Data
     cd(['F:\Data\IRSST\RAW\' Subjects{iSubjects} '\mvc'])
     load(['CleanData_MVC_' (Subjects{iSubjects}) '.mat']);
@@ -153,7 +153,7 @@ for iSubjects = 23:length(Subjects)
 %         pause
 
         figure
-        for iMuscles = 1:size(Muscles,1)
+        for iMuscles = 4:size(Muscles,1)
             subplot(3,4,iMuscles) ; plot(EMGBL(:,iMuscles)) ; title(Muscles{iMuscles},'interpreter','none')
 %             for iSeg = 1:length(Seg)
 %                 hold on
@@ -165,3 +165,8 @@ for iSubjects = 23:length(Subjects)
     end
     close all
 end
+
+signal_EMG = EMGBL(1:14360,:);
+plot(signal_EMG)
+cd(['C:\Users\p1098713\Documents\2.Post-Doc\Cours KIN6839\Exemples'])
+save(['EMGBL_all.mat'],'signal_EMG')

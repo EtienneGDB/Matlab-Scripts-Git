@@ -1,0 +1,173 @@
+% Save a matrix of one indicators, one parameter and one body segment in a structure
+% with all the body segment
+
+clear ;
+close all ;
+clc ;
+
+addpath \\10.89.24.15\E\Bureau\Etienne\MATLAB\Functions
+addpath(genpath('\\10.89.24.15\E\Bureau\Etienne\MATLAB\Functions\btk'))
+addpath(genpath('\\10.89.24.15\E\Bureau\Etienne\MATLAB\Functions\wtc-r16'))
+addpath(genpath('\\10.89.24.15\E\Bureau\Etienne\MATLAB\Functions\Matlab-Functions-Git'))
+addpath(genpath('\\10.89.24.15\E\Bureau\Etienne\MATLAB\Functions\FFT'))
+addpath(genpath('\\10.89.24.15\E\Bureau\Etienne\MATLAB\Functions\Entropy Fouaz'))
+
+FoldersNames = dir('\\10.89.24.15\q\IRSST_DavidsTea\Raw_Data');
+Subjects = {...
+    FoldersNames(3:length(FoldersNames)).name... % May change if others files different from subject were add
+    } ;
+
+Task =  'RPT';  % 'Work' / 'RPT' / 'SP'
+tic
+parametre  = {'Acceleration','Angular_Velocity','Jerk','Module_Acceleration',...
+    'Module_Angular_Velocity','Module_Jerk'};
+
+indicateur = {'MedianFreq','SpectralEntropy','PowerLF','PowerHF','PowerTot', ...
+    'PeakPower','PeakPower_Freq'};
+
+cd('\\10.89.24.15\q\IRSST_DavidsTea')
+load('SegmentName_XSENS.mat')
+
+for ipar = 1:length(parametre)
+    for iind = 1:length(indicateur)
+        for iS = 1:17
+            if ipar > 3
+                Struc_Indicateur.(parametre{ipar}).(indicateur{iind}).(SegmentName{iS,1}) = NaN(31,11);
+            else
+                Struc_Indicateur.(parametre{ipar}).(indicateur{iind}).(SegmentName{iS,1}) = NaN(93,11);
+                
+            end
+            
+        end
+    end
+end
+
+for iSubjects = 29%:length(Subjects)
+    Task = convertCharsToStrings(Task);
+    
+    if Task == 'SP'
+        cd(['\\10.89.24.15\q\IRSST_DavidsTea\Data_exported\XSENS\Matlab\Filtered\Static_Pose'])
+    elseif Task == 'Work'
+        cd(['\\10.89.24.15\q\IRSST_DavidsTea\Data_exported\XSENS\Matlab\Filtered\Working_Task'])
+    elseif Task == 'RPT'
+        cd(['\\10.89.24.15\q\IRSST_DavidsTea\Data_exported\XSENS\Matlab\Filtered\RPT'])
+    end
+    
+    %% Load files
+    Task = convertStringsToChars(Task);
+    load(['filtredXSENS_' Task '_' Subjects{iSubjects} '.mat'])
+    
+    TempMVNBL = eval(['MVNBL_' Task]);
+    
+    % To only keep the trial in the strucutre
+    FN = fieldnames(TempMVNBL);
+    NewFN = {};
+    jFN = 1;
+    for iFN = 1:length(FN)
+        if strcmp(FN{iFN}(1), 'T') == 1
+            NewFN(jFN,1) = FN(iFN);
+            jFN = jFN+1;
+        end
+    end
+    
+    %---Correct Acc data---
+    Data_CO = TempMVNBL;
+    Temporisation = 0;
+    for iTrial = 1:length(NewFN)
+        Trial = ['Trial' num2str(iTrial)];
+        
+        Segments = fieldnames(Data_CO.(Trial).SegmentAcceleration);
+        for iSegment = 1:length(Segments)
+            figure(1)
+            locs_FrameToCorrec = [];
+            tempLabel = Segments{iSegment};
+            % for iaxe = 3
+            sig = TempMVNBL.(Trial).SegmentAcceleration.(tempLabel)(:,3);
+%             sig = Module(TempMVNBL.(Trial).SegmentAcceleration.(tempLabel));
+            mdsig = median(sig);
+            varsig = iqr(sig);
+            disp(['varsig = ' num2str(varsig)]);
+            if varsig < 0.5
+                thresh = mdsig-15*varsig;
+            elseif varsig  > 0.5 & varsig < 0.6
+                thresh = mdsig-10*varsig;
+            else
+                thresh = mdsig-15*varsig;
+            end
+            if Task == 'RPT'
+                thresh = -6.5;
+            end
+            
+            FrameToCorrec = find(sig < thresh);
+            if length(FrameToCorrec) > 0
+                if FrameToCorrec(end) == length(sig)
+                    FrameToCorrec(end) = [];
+                end
+            end
+            N_FrameToCorrec = diff(find(diff([nan ; FrameToCorrec(:) ; nan]) ~= 1));
+            Ninterp_FrameToCorrec = [0; N_FrameToCorrec];
+            idx_N_FrameToCorrec = cumsum(Ninterp_FrameToCorrec);
+            for iN = 1:length(N_FrameToCorrec)
+                locs_FrameToCorrec(iN,1) = FrameToCorrec(1+idx_N_FrameToCorrec(iN));
+                if N_FrameToCorrec(iN) <= 2
+                    sig(locs_FrameToCorrec(iN,1):locs_FrameToCorrec(iN,1)+N_FrameToCorrec(iN)) = NaN;
+                    Data_CO.(Trial).SegmentAcceleration.(tempLabel)(locs_FrameToCorrec(iN,1):locs_FrameToCorrec(iN,1)+N_FrameToCorrec(iN),:) = NaN;
+                end
+            end
+            
+            times = 1:length(sig);
+            mask = ~isnan(sig);
+            for iaxe = 1:3
+                nseq = Data_CO.(Trial).SegmentAcceleration.(tempLabel)(:,iaxe);
+                nseq(~mask) = interp1(times(mask), sig(mask), times(~mask));
+                %                 nseq = sig;
+                %                 nseq(~mask) = interp1(times(mask), sig(mask), times(~mask));
+                Data_CO.(Trial).SegmentAcceleration.(tempLabel)(:,iaxe) = nseq;
+                if max(abs(nseq)) >=6.5
+                    Temporisation = 1;
+                    subplot(3,1,iaxe); plot(TempMVNBL.(Trial).SegmentAcceleration.(tempLabel)(:,iaxe))
+                    hold on
+                    %                     subplot(3,1,iaxe); plot(sig)
+                    %                 plot(mask)
+                    subplot(3,1,iaxe); plot(Data_CO.(Trial).SegmentAcceleration.(tempLabel)(:,iaxe),'color',[0.9290 0.6940 0.1250])
+                    title(['Subject ' num2str(iSubjects) ' ' tempLabel ' axe ' num2str(iaxe) ' ' Trial])
+                    
+%                     Freq = 60 ;
+%                     dt=1/Freq ;
+%                     t=(0:length(TempMVNBL.(Trial).AngularVelocity.Pelvis  )-1)*dt ;
+%                     f = 0.05:0.05:24.05;...Range de fréqence de la décomposition
+%                         ond = ["cmor8-1"];
+%                     scale = Freq*centfrq(ond)./f;
+%                     [coefAcc fAcc] = cwt(TempMVNBL.(Trial).SegmentAcceleration.(tempLabel)(:,1),scale,ond,dt);
+%                     [coefAcc fAcc] = cwt(TempMVNBL.(Trial).SegmentAcceleration.(tempLabel)(:,1),'amor',60);
+%                     PSD = abs(coefAcc).^2;
+%                     figure; pcolor(t,fAcc,PSD); shading interp
+                end
+            end
+            if Temporisation == 1
+                pause()
+                clf
+                Temporisation = 0;
+            end
+        end
+        close(figure(1 ))
+        TempMVNBL = Data_CO;
+    end
+    %-----------------------
+        
+%     if Task == 'SP'
+%         cd(['\\10.89.24.15\q\IRSST_DavidsTea\Data_exported\XSENS\Matlab\Filtered\Static_Pose'])
+%         MVNBL_SP = TempMVNBL;
+%         save(['CO_filtredXSENS_SP_' (Subjects{iSubjects}) '.mat'],'MVNBL_SP')
+%     elseif Task == 'Work'
+%         cd(['\\10.89.24.15\q\IRSST_DavidsTea\Data_exported\XSENS\Matlab\Filtered\Working_Task'])
+%         MVNBL_Work = TempMVNBL;
+%         save(['CO_filtredXSENS_Work_' (Subjects{iSubjects}) '.mat'],'MVNBL_Work')
+    if Task == 'RPT'
+        cd(['\\10.89.24.15\q\IRSST_DavidsTea\Data_exported\XSENS\Matlab\Filtered\RPT'])
+        MVNBL_RPT = TempMVNBL;
+        save(['CO_filtredXSENS_RPT_' (Subjects{iSubjects}) '.mat'],'MVNBL_RPT')
+    end
+
+    
+end

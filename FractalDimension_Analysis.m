@@ -56,19 +56,19 @@ Trials = {...
     's_u_';...
     };
 
-TableData = [];
+TableData_FracDim = [];
 for iSubjects = 1:length(Subjects)
     for iTrials = 1:length(Trials)
         for iM = 1:length(Muscles)
-            TableData.(Muscles{iM}) = [];
+            TableData_FracDim.(Muscles{iM}) = [];
         end
     end
 end
 
 varInc = 1;
-for iSubjects = 1:length(Subjects)
+for iSubjects = 26:length(Subjects)
     for iTrials = 1:length(Trials)
-        [strcTFR,strcSeg,strcAct,strcMob,strcSpecEnt,strcAmp,strcSampEnt] = LoadTrials(iSubjects, Subjects{1,iSubjects}, Trials{iTrials});
+        [strcTFR,strcSeg,strcAct,strcMob,strcSpecEnt,strcAmp,strcSampEnt,strcFracDim] = LoadTrials(iSubjects, Subjects{1,iSubjects}, Trials{iTrials});
         
         if Trials{iTrials}(1) == 'l'
             C1 = 1;
@@ -99,6 +99,8 @@ for iSubjects = 1:length(Subjects)
                     SampEnt = eval(['strcSampEnt.Trial' num2str(iNumTrials) '.Seg.' Muscles{iM}]);
                     
                     Amplitude = eval(['strcAmp.Trial' num2str(iNumTrials) '.Seg.' Muscles{iM}]);
+
+                    FracDim = eval(['strcFracDim.Trial' num2str(iNumTrials) '.' Muscles{iM}]);
 
                     if isnan(MedianFreq) | MedianFreq == 0
                         TableData.(Muscles{iM})(varInc,:) = NaN;
@@ -146,30 +148,34 @@ for iSubjects = 1:length(Subjects)
                         SpecEnt = SpecEnt(Cycle(iSeg,1):Cycle(iSeg,2));
                         SpecEnt = SpecEnt(SpecEnt > (mean(SpecEnt)-3*std(SpecEnt)) & SpecEnt < (mean(SpecEnt)+3*std(SpecEnt)));...Supprime outliers
                             
-                        TableData.(Muscles{iM})(varInc,1) = iSubjects;...Participant
-                        TableData.(Muscles{iM})(varInc,2) = Subjects{3,iSubjects};...Expertise
-                        TableData.(Muscles{iM})(varInc,3) = C1;...Condition essai (l,m,s)
-                        TableData.(Muscles{iM})(varInc,4) = C2;...Condition essai (d,u)
-                        TableData.(Muscles{iM})(varInc,5) = iNumTrials;...Quel essai
-                        TableData.(Muscles{iM})(varInc,6) = iSeg;...Quel segment
+                        TableData_FracDim.(Muscles{iM})(varInc,1) = iSubjects;...Participant
+                        TableData_FracDim.(Muscles{iM})(varInc,2) = Subjects{3,iSubjects};...Expertise
+                        TableData_FracDim.(Muscles{iM})(varInc,3) = C1;...Condition essai (l,m,s)
+                        TableData_FracDim.(Muscles{iM})(varInc,4) = C2;...Condition essai (d,u)
+                        TableData_FracDim.(Muscles{iM})(varInc,5) = iNumTrials;...Quel essai
+                        TableData_FracDim.(Muscles{iM})(varInc,6) = iSeg;...Quel segment
                         
-                        TableData.(Muscles{iM})(varInc,7) = Amplitude(iSeg);...Amplitude
-                        TableData.(Muscles{iM})(varInc,8) = ActivitySeg(iSeg);...Activity
-                        TableData.(Muscles{iM})(varInc,9) = MobilitySeg(iSeg);...Mobility
+                        TableData_FracDim.(Muscles{iM})(varInc,7) = Amplitude(iSeg);...Amplitude
+                        TableData_FracDim.(Muscles{iM})(varInc,8) = ActivitySeg(iSeg);...Activity
+                        TableData_FracDim.(Muscles{iM})(varInc,9) = MobilitySeg(iSeg);...Mobility
                         
-                        TableData.(Muscles{iM})(varInc,10) = SampEnt(iSeg);...SampEn
-                        TableData.(Muscles{iM})(varInc,11) = mean(SpecEnt);...Moyenne SpecEnt
-                        TableData.(Muscles{iM})(varInc,12) = median(SpecEnt);...Median SpecEnt
-                        TableData.(Muscles{iM})(varInc,13) = mean(MedianFreq);...Moyenne MedianFreq
-                        TableData.(Muscles{iM})(varInc,14) = median(MedianFreq);...Mediane MedianFreq
+                        TableData_FracDim.(Muscles{iM})(varInc,10) = SampEnt(iSeg);...SampEn
+                        TableData_FracDim.(Muscles{iM})(varInc,11) = mean(SpecEnt);...Moyenne SpecEnt
+                        TableData_FracDim.(Muscles{iM})(varInc,12) = median(SpecEnt);...Median SpecEnt
+                        TableData_FracDim.(Muscles{iM})(varInc,13) = mean(MedianFreq);...Moyenne MedianFreq
+                        TableData_FracDim.(Muscles{iM})(varInc,14) = median(MedianFreq);...Mediane MedianFreq
+                        
+                        TableData_FracDim.(Muscles{iM})(varInc,15) = FracDim(iSeg);...FracDim
                     end
                 end
             varInc = varInc + 1;
             end
         end
     end
+    save('H:\Bureau\Etienne\Extracted data\TableData_FracDim.mat','TableData_FracDim')
 end
-TABLEDATA = TableData;
+
+TABLEDATA_FracDim = TableData_FracDim;
 
 % Remove outliers
 outDat = [];
@@ -187,66 +193,82 @@ for iM = 1:length(Muscles)
                 NSeg = 12;
             end
             for iSeg = 1:NSeg
-                idDat = find(TABLEDATA.(Muscles{iM})(:,3)==iC1 & TABLEDATA.(Muscles{iM})(:,4)==iC2 & TABLEDATA.(Muscles{iM})(:,6)==iSeg);
+                idDat = find(TABLEDATA_FracDim.(Muscles{iM})(:,3)==iC1 & TABLEDATA_FracDim.(Muscles{iM})(:,4)==iC2 & TABLEDATA_FracDim.(Muscles{iM})(:,6)==iSeg);
                 
                 % Clean Mean MedianFreq
-                Dat = TABLEDATA.(Muscles{iM})(TABLEDATA.(Muscles{iM})(:,3)==iC1 & TABLEDATA.(Muscles{iM})(:,4)==iC2 & TABLEDATA.(Muscles{iM})(:,6)==iSeg,7);
+                Dat = TABLEDATA_FracDim.(Muscles{iM})(TABLEDATA_FracDim.(Muscles{iM})(:,3)==iC1 & TABLEDATA_FracDim.(Muscles{iM})(:,4)==iC2 & TABLEDATA_FracDim.(Muscles{iM})(:,6)==iSeg,7);
                 Out = find(Dat > prctile(Dat,95));
-                TABLEDATA.(Muscles{iM})(idDat(Out),7) = NaN;
+                TABLEDATA_FracDim.(Muscles{iM})(idDat(Out),7) = NaN;
                 outDat.(Muscles{iM})(1,1) = outDat.(Muscles{iM})(1,1)+length(Out);
                 
                 % Clean Median MedianFreq
-                Dat = TABLEDATA.(Muscles{iM})(TABLEDATA.(Muscles{iM})(:,3)==iC1 & TABLEDATA.(Muscles{iM})(:,4)==iC2 & TABLEDATA.(Muscles{iM})(:,6)==iSeg,8);
+                Dat = TABLEDATA_FracDim.(Muscles{iM})(TABLEDATA_FracDim.(Muscles{iM})(:,3)==iC1 & TABLEDATA_FracDim.(Muscles{iM})(:,4)==iC2 & TABLEDATA_FracDim.(Muscles{iM})(:,6)==iSeg,8);
                 Out = find(Dat > prctile(Dat,95));
-                TABLEDATA.(Muscles{iM})(idDat(Out),8) = NaN;
+                TABLEDATA_FracDim.(Muscles{iM})(idDat(Out),8) = NaN;
                 
                 % Clean Activity
-                Dat = TABLEDATA.(Muscles{iM})(TABLEDATA.(Muscles{iM})(:,3)==iC1 & TABLEDATA.(Muscles{iM})(:,4)==iC2 & TABLEDATA.(Muscles{iM})(:,6)==iSeg,9);
+                Dat = TABLEDATA_FracDim.(Muscles{iM})(TABLEDATA_FracDim.(Muscles{iM})(:,3)==iC1 & TABLEDATA_FracDim.(Muscles{iM})(:,4)==iC2 & TABLEDATA_FracDim.(Muscles{iM})(:,6)==iSeg,9);
                 Out = find(Dat > prctile(Dat,95));
-                TABLEDATA.(Muscles{iM})(idDat(Out),9) = NaN;
+                TABLEDATA_FracDim.(Muscles{iM})(idDat(Out),9) = NaN;
 
                 % Clean Mobility
-                Dat = TABLEDATA.(Muscles{iM})(TABLEDATA.(Muscles{iM})(:,3)==iC1 & TABLEDATA.(Muscles{iM})(:,4)==iC2 & TABLEDATA.(Muscles{iM})(:,6)==iSeg,10);
+                Dat = TABLEDATA_FracDim.(Muscles{iM})(TABLEDATA_FracDim.(Muscles{iM})(:,3)==iC1 & TABLEDATA_FracDim.(Muscles{iM})(:,4)==iC2 & TABLEDATA_FracDim.(Muscles{iM})(:,6)==iSeg,10);
                 Out = find(Dat > prctile(Dat,95));
-                TABLEDATA.(Muscles{iM})(idDat(Out),10) = NaN;
+                TABLEDATA_FracDim.(Muscles{iM})(idDat(Out),10) = NaN;
                 
                 % Clean Mean SpecEnt
-                Dat = TABLEDATA.(Muscles{iM})(TABLEDATA.(Muscles{iM})(:,3)==iC1 & TABLEDATA.(Muscles{iM})(:,4)==iC2 & TABLEDATA.(Muscles{iM})(:,6)==iSeg,11);
+                Dat = TABLEDATA_FracDim.(Muscles{iM})(TABLEDATA_FracDim.(Muscles{iM})(:,3)==iC1 & TABLEDATA_FracDim.(Muscles{iM})(:,4)==iC2 & TABLEDATA_FracDim.(Muscles{iM})(:,6)==iSeg,11);
                 Out = find(Dat > prctile(Dat,95));
-                TABLEDATA.(Muscles{iM})(idDat(Out),10) = NaN;
+                TABLEDATA_FracDim.(Muscles{iM})(idDat(Out),10) = NaN;
 
                 % Clean Median SpecEnt
-                Dat = TABLEDATA.(Muscles{iM})(TABLEDATA.(Muscles{iM})(:,3)==iC1 & TABLEDATA.(Muscles{iM})(:,4)==iC2 & TABLEDATA.(Muscles{iM})(:,6)==iSeg,12);
+                Dat = TABLEDATA_FracDim.(Muscles{iM})(TABLEDATA_FracDim.(Muscles{iM})(:,3)==iC1 & TABLEDATA_FracDim.(Muscles{iM})(:,4)==iC2 & TABLEDATA_FracDim.(Muscles{iM})(:,6)==iSeg,12);
                 Out = find(Dat > prctile(Dat,95));
-                TABLEDATA.(Muscles{iM})(idDat(Out),10) = NaN;
+                TABLEDATA_FracDim.(Muscles{iM})(idDat(Out),10) = NaN;
             end
         end
     end
+    TABLEDATA_FracDim.(Muscles{iM})(find(TABLEDATA_FracDim.(Muscles{iM})(:,15)==0),15)=NaN;
 end
 boxplot(Dat)
-find(isnan(TABLEDATA.(Muscles{iM})(:,10)))
+find(isnan(TABLEDATA_FracDim.(Muscles{iM})(:,10)))
 
 % Boxplot
 for iM = 1:length(Muscles)
-    boxplot(TABLEDATA.(Muscles{iM})(:,7),TABLEDATA.(Muscles{iM})(:,[3 4 5]))
+    boxplot(TABLEDATA_FracDim.(Muscles{iM})(:,14),TABLEDATA_FracDim.(Muscles{iM})(:,[2 3 4 5]))
     title((Muscles{iM}))
     pause
 end
 for iM = 1:length(Muscles)
-    boxplot(TABLEDATA.(Muscles{iM})(:,11),TABLEDATA.(Muscles{iM})(:,[6]))
+    boxplot(TABLEDATA_FracDim.(Muscles{iM})(:,11),TABLEDATA_FracDim.(Muscles{iM})(:,[6]))
     title((Muscles{iM}))
     pause
 end
 
-VarNames = {'Participant','Expertise','BoxSize','UpDown','Trial','Seg','Amplitude','Activity','Mobility','SampEn','MeanSE','MedianSE','MeanMF','MedianMF'};
-save('H:\Bureau\Etienne\Extracted data\TableData_LMM.mat','TableData')
-save('H:\Bureau\Etienne\Extracted data\CleanTABLEDATA_LMM.mat','TABLEDATA')
-save('H:\Bureau\Etienne\Extracted data\VarNamesEN.mat','VarNames')
+% VarNames = {'Participant','Expertise','BoxSize','UpDown','Trial','Seg','Amplitude','Activity','Mobility','SampEn','MeanSE','MedianSE','MeanMF','MedianMF'};
+% save('H:\Bureau\Etienne\Extracted data\TableData_LMM.mat','TableData')
+% save('H:\Bureau\Etienne\Extracted data\CleanTABLEDATA_LMM.mat','TABLEDATA')
+% save('H:\Bureau\Etienne\Extracted data\VarNamesEN.mat','VarNames')
+% 
 
+% Mean Activation level
+Act_lev = [];
+for iM = 1:length(Muscles)
+    for iP = 1:31
+        temp1 = TABLEDATA.(Muscles{iM})(TABLEDATA.(Muscles{iM})(:,1)==iP,:);
+        for iC = 1:3
+            temp2 = temp1(temp1(:,3)==iC,:);
+            Act_lev.(Muscles{iM})(iP,iC) = mean(temp2(:,7),'omitnan');
+        end
+    end
+end
 
-
-
-
+Mean_Act_lev = [];
+SD_Act_lev = [];
+for iM = 1:length(Muscles)
+    Mean_Act_lev(iM,:) = mean(Act_lev.(Muscles{iM}),'omitnan');
+    SD_Act_lev(,:) = std(Act_lev.(Muscles{iM}),'omitnan');
+end
 
 
 

@@ -7,6 +7,7 @@ addpath(genpath('C:\Users\p1098713\Documents\3.MATLAB\Fonctions\btk'))
 addpath(genpath('C:\Users\p1098713\Documents\3.MATLAB\Fonctions\wtc-r16'))
 addpath(genpath('C:\Users\p1098713\Documents\3.MATLAB\Fonctions\Matlab-Functions-Git'))
 addpath(genpath('C:\Users\p1098713\Documents\3.MATLAB\Fonctions\FFT'))
+addpath(genpath('C:\Users\p1098713\Documents\3.MATLAB\Fonctions\Sample entropy Fouaz'))
 
 % addpath H:\Bureau\Etienne\MATLAB\Functions
 % addpath(genpath('H:\Bureau\Etienne\MATLAB\Functions\btk'))
@@ -36,14 +37,14 @@ Muscles = {...
     } ;
 
 %iSubjects=1;
-for iSubjects = 21:length(Subjects)
+for iSubjects = 2:length(Subjects)
     %Load MVC Data
     cd(['F:\Data\IRSST\RAW\' Subjects{iSubjects} '\mvc'])
     load(['CleanData_MVC_' (Subjects{iSubjects}) '.mat']);
 
     % Plus de place sur serveur F donc les données ne sont pas au même
     % endroit pour tout le monde
-    if ismember(iSubjects,[2:16 18:19 21:24 26:length(Subjects)])
+    if ismember(iSubjects,[2:16 18:19 20:24 26:length(Subjects)])
         FolderContent = dir(['F:\Data\IRSST\RAW\' Subjects{iSubjects} '\fatigue']);
         FileNames = {...
         FolderContent(3:length(FolderContent)).name...
@@ -101,7 +102,7 @@ for iSubjects = 21:length(Subjects)
     %iFiles=1;
     % Load EMG data
     for iFiles = 1:length(FileNames)
-        cd(['H:\Bureau\Etienne\Extracted data\Fatigue\DataSelec'])
+        cd(['X:\Bureau\Etienne\Extracted data\Fatigue\DataSelec'])
         load(['RawEMG_Muscles_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat']);
         Data = DataSelec ;
         Freq = 2000 ;
@@ -147,28 +148,30 @@ for iSubjects = 21:length(Subjects)
 %         end
         
         %% Data analysis
-        %% EMG activation level
-%         [b,a] = butter(2,2*9/Freq) ; % Parametre du filtre Low pass 9 Hz
-%         EMG_envelop = filtfilt(b,a,abs(EMGBL)) ; % On ne garde que les valeurs absolues de EMGBL donc signal redressé au-dessus de 0
-%         plot(EMG_envelop)
         
         % EMG normalization
-        Normalization = [];
+        Normalization_toto = [];
         for iNormalization = 1:length(Muscles)
-            Normalization (:,iNormalization) = EMGBL(:,iNormalization)./EMG_max(1,iNormalization)*100;
+%             Normalization (:,iNormalization) = EMGBL(:,iNormalization)./EMG_max(1,iNormalization)*100;
+%             Normalization (:,iNormalization) = EMGBL(:,iNormalization)./max(EMGBL(:,iNormalization))*100;
+            Normalization_toto(:,iNormalization) = toto(:,iNormalization)./max(toto(:,iNormalization))*100;
         end
 %         figure ; plot(Normalization(:,1))
         
         % Dection of activity
-        cd(['H:\Bureau\Etienne\Extracted data\Fatigue\Signal Segments'])
+        cd(['X:\Bureau\Etienne\Extracted data\Fatigue\Signal Segments'])
         load(['Seg_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'])
+        
+        % Compute EMG envelop
+        [b,a] = butter(2,2*9/Freq) ; % Parametre du filtre Low pass 9 Hz
+        EMG_envelop = filtfilt(b,a,abs(Normalization)) ; % On ne garde que les valeurs absolues de EMGBL donc signal redressé au-dessus de 0
         
         % Compute Activity (feature)
         Activity = [];
         for iM = 1:length(Muscles)
-            Activity.Trial.(Muscles{iM}) = var(Normalization(:,iM));
+            Activity.Trial.(Muscles{iM}) = var(EMG_envelop(:,iM));
             for iSeg = 1:length(Seg)
-                Activity.Seg.(Muscles{iM})(:,iSeg) = var(Normalization(Seg(iSeg,1):Seg(iSeg,2),iM));
+                Activity.Seg.(Muscles{iM})(:,iSeg) = var(EMG_envelop(Seg(iSeg,1):Seg(iSeg,2),iM));
             end     
         end
         
@@ -176,30 +179,47 @@ for iSubjects = 21:length(Subjects)
         Mobility = [];
         for iM = 1:length(Muscles)
             % Derive Signal
-            axT = [1:length(Normalization(:,iM))]/Freq;
-            Derivative = diff(Normalization(:,iM))./diff(axT(1:2));
+            axT = [1:length(EMG_envelop(:,iM))]/Freq;
+            Derivative = diff(EMG_envelop(:,iM))./diff(axT(1:2));
 
-            Mobility.Trial.(Muscles{iM}) = var(Derivative)/var(Normalization(:,iM));
+            Mobility.Trial.(Muscles{iM}) = sqrt(var(Derivative)/var(EMG_envelop(:,iM)));
             
             for iSeg = 1:length(Seg)
-                Mobility.Seg.(Muscles{iM})(:,iSeg) = var(Derivative(Seg(iSeg,1):Seg(iSeg,2)))/var(Normalization(Seg(iSeg,1):Seg(iSeg,2),iM));
+                Mobility.Seg.(Muscles{iM})(:,iSeg) = var(Derivative(Seg(iSeg,1):Seg(iSeg,2)))/var(EMG_envelop(Seg(iSeg,1):Seg(iSeg,2),iM));
             end     
         end
         
-%         % Compute Sample Entropy (feature)
-%         addpath(genpath('C:\Users\p1098713\Documents\3.MATLAB\Fonctions\Entropy_measures'))
-%         addpath(genpath('C:\Users\p1098713\Documents\3.MATLAB\Fonctions\SampEn'))
-%         
-%         SampEn(2,0.2*std(Normalization(:,iM)),Normalization(:,iM),1)
-%         
-%         SampleEn(Normalization(:,iM),2,0.2*std(Normalization(:,iM)))
-
+%         % EMG activation level
+%         [b,a] = butter(2,2*9/Freq) ; % Parametre du filtre Low pass 9 Hz
+%         EMG_envelop = filtfilt(b,a,abs(Normalization)) ; % On ne garde que les valeurs absolues de EMGBL donc signal redressé au-dessus de 0
+%         Amplitude = [];
+%         for iM = 1:length(Muscles)
+%             for iSeg = 1:length(Seg)
+%                 Amplitude.Seg.(Muscles{iM})(:,iSeg) = mean(EMG_envelop(Seg(iSeg,1):Seg(iSeg,2),iM));
+%             end
+%         end
+        
+        % Compute Sample Entropy (feature)
+        SampleEntropy = [];
+        for iM = 1:length(Muscles)
+            for iSeg = 1:length(Seg)
+                SampleEntropy.Seg.(Muscles{iM})(:,iSeg) = sampenc(Normalization(Seg(iSeg,1):Seg(iSeg,2),iM),2,0.2); % erreur pour r -> vérif article Kartick
+                SampleEntropy.Seg.(Muscles{iM})(:,iSeg) = sampenc(Normalization_toto(Seg(iSeg,1):Seg(iSeg,2),iM),2,0.2);
+            end     
+        end
+        plot(Normalization_toto(:,10))
 
         cd(['H:\Bureau\Etienne\Extracted data\Fatigue\Activity'])
         save(['Activity' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'],'Activity')
 
         cd(['H:\Bureau\Etienne\Extracted data\Fatigue\Mobility'])
         save(['Mobility' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'],'Mobility')
+        
+%         cd(['H:\Bureau\Etienne\Extracted data\Fatigue\Amplitude'])
+%         save(['Amplitude_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'],'Amplitude')
+        
+%         cd(['H:\Bureau\Etienne\Extracted data\Fatigue\SampleEntropy'])
+%         save(['SampleEntropy_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'],'SampleEntropy')
 
     end
 end

@@ -35,14 +35,14 @@ Muscles = {...
     } ;
 
 %iSubjects=1;
-for iSubjects = 31
+for iSubjects = 20
     %Load MVC Data
-    cd(['F:\Data\IRSST\RAW\' Subjects{iSubjects} '\mvc'])
+    cd(['H:\Bureau\Etienne\Extracted data\Fatigue\MVC'])
     load(['CleanData_MVC_' (Subjects{iSubjects}) '.mat']);
 
     % Plus de place sur serveur F donc les données ne sont pas au même
     % endroit pour tout le monde
-    if ismember(iSubjects,[2:16 18:19 21:24 26:length(Subjects)])
+    if ismember(iSubjects,[2:16 18:19 20:24 26:length(Subjects)])
         FolderContent = dir(['F:\Data\IRSST\RAW\' Subjects{iSubjects} '\fatigue']);
         FileNames = {...
         FolderContent(3:length(FolderContent)).name...
@@ -154,30 +154,30 @@ for iSubjects = 31
         
         % Sum normalized signals
         SumNorm = [];
-        for iSig = 1:length(Normalization)
-            SumNorm(iSig) = sum(Normalization(iSig,[4,1,7]));... À modifier en fonction
+        for iSig = 1:length(EMGBL)
+            SumNorm(iSig) = sum(EMGBL(iSig,[1,4,6,7]));... À modifier en fonction
         end
 %         figure ; plot(SumNorm)
 
         % Dection of activity
-        [Seg Env] = ActivityDetection2(SumNorm, Normalization, 1000, 2000, Muscles, FileNames{2,iFiles}(1), FileNames{2,iFiles}, 1);
+        [Seg Env] = ActivityDetection2(SumNorm, EMGBL, 1000, 2000, Muscles, FileNames{2,iFiles}(1), FileNames{2,iFiles}, 1);
         pause
         
         % Correction Manuelle
-%         Env(43130:45100) = 0;
+%         Env(90234:98850) = 0;
 %         Env(17640:28190) = max(Env);
-%         Env(32500:40000) = max(Env);
-%         Env(103100:110700) = max(Env);
-%         Env(10750:19020) = max(Env);        
+%         Env(78940:90620) = max(Env);
+%         Env(100800:110500) = max(Env);
+%         Env(215800:227700) = max(Env);        
 %         figure ; plot(SumNorm) ; hold on ; plot(Env)
         
 %         Seg(7,:) = [];
 %         Seg = [];
 %         Env = [];
 
-        cd(['H:\Bureau\Etienne\Extracted data\Fatigue\Signal Segments'])
-        save(['Seg_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'],'Seg')
-        save(['Env_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'],'Env')
+%         cd(['H:\Bureau\Etienne\Extracted data\Fatigue\Signal Segments'])
+%         save(['Seg_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'],'Seg')
+%         save(['Env_' (FileNames{2,iFiles}) '_' (Subjects{iSubjects}) '.mat'],'Env')
         
         close all
         clear functions

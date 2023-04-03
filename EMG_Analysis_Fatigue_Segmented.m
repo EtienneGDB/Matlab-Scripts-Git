@@ -7,6 +7,7 @@ addpath(genpath('C:\Users\p1098713\Documents\3.MATLAB\Fonctions\btk'))
 addpath(genpath('C:\Users\p1098713\Documents\3.MATLAB\Fonctions\wtc-r16'))
 addpath(genpath('C:\Users\p1098713\Documents\3.MATLAB\Fonctions\Matlab-Functions-Git'))
 addpath(genpath('C:\Users\p1098713\Documents\3.MATLAB\Fonctions\FFT'))
+addpath(genpath('C:\Users\p1098713\Documents\3.MATLAB\Fonctions\Entropy Fouaz'))
 
 % addpath H:\Bureau\Etienne\MATLAB\Functions
 % addpath(genpath('H:\Bureau\Etienne\MATLAB\Functions\btk'))
@@ -36,14 +37,14 @@ Muscles = {...
     } ;
 
 %iSubjects=1;
-for iSubjects = 1%:length(Subjects)
+for iSubjects = 2%:length(Subjects)
     %Load MVC Data
     cd(['F:\Data\IRSST\RAW\' Subjects{iSubjects} '\mvc'])
     load(['CleanData_MVC_' (Subjects{iSubjects}) '.mat']);
 
     % Plus de place sur serveur F donc les données ne sont pas au même
     % endroit pour tout le monde
-    if ismember(iSubjects,[2:16 18:19 21:24 26:length(Subjects)])
+    if ismember(iSubjects,[2:16 18:19 20:24 26:length(Subjects)])
         FolderContent = dir(['F:\Data\IRSST\RAW\' Subjects{iSubjects} '\fatigue']);
         FileNames = {...
         FolderContent(3:length(FolderContent)).name...
@@ -114,14 +115,17 @@ for iSubjects = 1%:length(Subjects)
             else
                 EMG(:,iMuscles) = Data.(Muscles{iMuscles,1}) ;
             end
-%             subplot(3,3,iMuscles) ; plot(EMG(:,iMuscles)) ; title(Muscles{iMuscles,1}, 'interpreter', 'none') ;
+            subplot(3,3,iMuscles) ; plot(EMG(:,iMuscles)) ; title(Muscles{iMuscles,1}, 'interpreter', 'none') ;
         end
+        spec_fft(EMG(:,4),2000,1)
 
         % Preprocessing
         % Freq : fréquence d'échantillonage de l'EMG
         [b,a] = butter(2,2*[10 400]/Freq) ; % Parametre du filtre BP 10-400 Hz
         EMGBP = filtfilt(b,a,EMG) ;
         EMGBS = EMGBP;
+        plot(EMGBS(:,4))
+        spec_fft(EMGBS(:,4),2000,1)
           
         % Filtre les données à 60Hz et 120Hz pour EMG_intra
         Peak_Surface = [60];
@@ -141,6 +145,7 @@ for iSubjects = 1%:length(Subjects)
         
         % Remove baseline
         EMGBL = EMGBS - repmat(mean(EMGBS),length(EMGBS),1) ; % Remove baseline (la fonction repmat donne une matrice de taille length(EMGBS) x 1 remplie de moyennes de EMGBS. On soustrait donc la moyenne de EMGBS à chacune de ses valeurs)
+        plot(EMGBL(:,4))
                 
 %         for iMuscles = 1:size(Muscles,1)
 %             subplot(3,4,iMuscles) ; plot(EMGBL(:,iMuscles)) ; title(Muscles{iMuscles},'interpreter','none')

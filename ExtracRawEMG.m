@@ -44,7 +44,7 @@ for iSubjects = 28:length(Subjects)
 %    } ;
 
     % Les participants sur disque E
-    FolderContent = dir(['H:\Projet_ExpertsNovices\data\raw\2017-09-28\samc\fatigue']);
+    FolderContent = dir(['X:\Projet_ExpertsNovices\data\raw\2017-09-28\samc\fatigue']);
     FileNames = {...
     FolderContent(3:length(FolderContent)).name...
    } ;
@@ -71,14 +71,7 @@ for iSubjects = 28:length(Subjects)
     % Load EMG data
     for iFiles = 1:length(FileNames)
 %         cd(['F:\Data\IRSST\RAW\' Subjects{iSubjects} '\fatigue'])
-        cd(['H:\Projet_ExpertsNovices\data\raw\2017-09-28\samc\fatigue'])
-        
-                cd(['H:\Bureau\Felipe'])
-                acq = btkReadAcquisition('Liszt2.c3d') ;
-                Data2 = btkGetPoints(acq) ;
-
-
-
+        cd(['H:\Projet_ExpertsNovices\data\raw\2017-09-29\aled\fatigue'])
         acq = btkReadAcquisition(FileNames{1,iFiles}) ;
         Data = btkGetAnalogs(acq) ;
         Freq = btkGetAnalogFrequency(acq) ;

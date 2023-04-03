@@ -126,12 +126,19 @@ for iSubjects = 21:length(Subjects)
     end
 end
 
-VarNames = {'Participant','Expertise','BoxSize','UpDown','Trial','Seg','Time'};
-save('H:\Bureau\Etienne\Extracted data\TableData_LMM.mat','TimeData')
-save('H:\Bureau\Etienne\Extracted data\VarNames_LMM.mat','VarNames')
+VarNames_TimeData = {'Participant','Expertise','BoxSize','UpDown','Trial','Seg','Time'};
+save('H:\Bureau\Etienne\Extracted data\TimeData.mat','TimeData')
+save('H:\Bureau\Etienne\Extracted data\VarNames_TimeData.mat','VarNames_TimeData')
 
+figure
+for iSubjects = 1:31
+    for iC1 = 1:3
+        plot(TimeData(TimeData(:,1)==iSubjects & TimeData(:,3)==iC1,7),'.')
+        pause
+    end
+end
 
-boxplot(TimeData(:,6),TimeData(:,2))
+boxplot(TimeData(:,7),TimeData(:,6))
 
 %% Linear Mixed Model
 % Appelle le code R Ancova_EEG
