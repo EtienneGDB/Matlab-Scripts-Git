@@ -3,28 +3,11 @@ close all ;
 clc ;
 
 % Task = {'TUG', '3min Free', '4min Free', '5min Free'};
-Task = '4min Free';
-Xunit = 'Frame';
-
-% Declare tables
-Percent_Time_Frozen = [NaN];
-Percent_Time_Tremor_Walking = [NaN];
-Percent_Time_Tremor_NOWalking = [NaN];
-Tremor_Level = [NaN];
-Brady_Level = [NaN];
-Dysk_Level = [NaN];
-
-cd('F:\Projet RPQ\Extracted_Data')
-save([Task '_Percent_Time_Frozen.mat'],'Percent_Time_Frozen')
-save([Task '_Percent_Time_Tremor_Walking.mat'],'Percent_Time_Tremor_Walking')
-save([Task '_Percent_Time_Tremor_NOWalking.mat'],'Percent_Time_Tremor_NOWalking')
-save([Task '_Tremor_Level.mat'],'Tremor_Level')
-save([Task '_Brady_Level.mat'],'Brady_Level')
-save([Task '_Dysk_Level.mat'],'Dysk_Level')
+Task = 'TUG';
 
 % Participant to load
 % Participant = 3;
-for Participant = 2:9
+for Participant = 7:9
     if Participant < 10
         Participant_Name = sprintf('P0%s',num2str(Participant));
     else
@@ -67,7 +50,7 @@ for Participant = 2:9
     RemoveThreePeaks = 0;
     showplot = 0;
     details = 0;
-    if Participant == 2 & Task(1:3) == 'TUG'
+    if Participant == 2
         [TaskSeg, TurnSeg, SegNOWalking, Number_of_Steps] = RPQ_ThreePeaksDetection(acc_ankle_vertical, gyr_ankle_vertical, Freq, 9, 1, details); % P2
     else
         [TaskSeg, TurnSeg, SegNOWalking, Number_of_Steps] = RPQ_ThreePeaksDetection(acc_ankle_vertical, gyr_ankle_vertical, Freq, NpeaksToDetect, RemoveThreePeaks, details);  % others
@@ -157,7 +140,7 @@ showplot = 0;
 [PTF, Freezing_Index, Freezing_mask, FreezingSeg] = RPQ_FOG_Detection(acc_ankle_vertical, PowerFoG_ankle(:,1), PowerMVT_ankle(:,1), TaskSeg, showplot);
 
 %% Detect Tremor
-showplot =0;
+showplot = 0;
 [PTT_Walking, PTT_NOWalking, Tremor, Tremor_mask, TremorSeg] = RPQ_Tremor_Detection(acc_wrist, PowerTremor_wrist, sum(PowerMVT_wrist,2), PeakPower_Freq_wrist, TaskSeg, SegNOWalking, showplot);
 
 %% Detect Bradykinesia
@@ -167,49 +150,6 @@ showplot = 0;
 %% Detect Dyskinesia
 showplot = 0;
 [Dysk] = RPQ_Dysk_Detection(acc_wrist, sum(PowerMVT_wrist,2), Tremor_mask, TaskSeg, SegNOWalking, showplot);
-
-
-%% Load and save sympt
-% Load and save PTF
-cd('F:\Projet RPQ\Extracted_Data')
-load([Task '_Percent_Time_Frozen.mat'])
-Percent_Time_Frozen(Participant,:) = mean(PTF);
-
-cd('F:\Projet RPQ\Extracted_Data')
-save([Task '_Percent_Time_Frozen.mat'],'Percent_Time_Frozen')
-
-
-% Load and save PTF
-cd('F:\Projet RPQ\Extracted_Data')
-load([Task '_Percent_Time_Tremor_Walking.mat'])
-load([Task '_Percent_Time_Tremor_NOWalking.mat'])
-load([Task '_Tremor_Level.mat'])
-Percent_Time_Tremor_Walking(Participant,:) = mean(PTT_Walking);
-Percent_Time_Tremor_NOWalking(Participant,:) = mean(PTT_NOWalking);
-Tremor_Level(Participant,:) = mean(Tremor);
-
-cd('F:\Projet RPQ\Extracted_Data')
-save([Task '_Percent_Time_Tremor_Walking.mat'],'Percent_Time_Tremor_Walking')
-save([Task '_Percent_Time_Tremor_NOWalking.mat'],'Percent_Time_Tremor_NOWalking')
-save([Task '_Tremor_Level.mat'],'Tremor_Level')
-
-
-% Load and save Brady
-cd('F:\Projet RPQ\Extracted_Data')
-load([Task '_Brady_Level.mat'])
-Brady_Level(Participant,:) = nanmean(Brady);
-
-cd('F:\Projet RPQ\Extracted_Data')
-save([Task '_Brady_Level.mat'],'Brady_Level')
-
-
-% Load and save Dysk
-cd('F:\Projet RPQ\Extracted_Data')
-load([Task '_Dysk_Level.mat'])
-Dysk_Level(Participant,:) = nanmean(Dysk);
-
-cd('F:\Projet RPQ\Extracted_Data')
-save([Task '_Dysk_Level.mat'],'Dysk_Level')
 
 
 
@@ -248,21 +188,9 @@ legend('boxoff')
 h = gca;
 set( h, 'YDir', 'reverse' )
 
-if Xunit(1) == 'T'
-    dt = 1/Freq;
-    Time = [0:dt:(length(Filtre_acc_ankle_plot)-1)/Freq];
-    TaskSeg = TaskSeg/Freq;
-    TurnSeg = TurnSeg/Freq;
-    FreezingSeg = FreezingSeg/Freq;
-    TremorSeg = TremorSeg/Freq;
-else
-    Time = 1:length(Filtre_acc_ankle_plot);
-end
-
-
-subplot(3,1,3); plot(Time, Filtre_acc_ankle_plot);
+subplot(3,1,3); plot(Filtre_acc_ankle_plot);
 hold on
-plot(Time, Filtre_gyr_ankle_plot);
+plot(Filtre_gyr_ankle_plot);
 TaskSeg_Legend = {'Walk. phase'};
 % if length(TaskSeg) > 1
 %     for i = 2:length(TaskSeg)
@@ -324,11 +252,40 @@ if size(TremorSeg,1) > 1
 end
 
 pause
-clearvars -except Task Xunit
+clearvars -except Task
 
 end
 
 
 
 
+
+% Load and save PTF
+% Percent_Time_Frozen = [NaN NaN NaN];
+cd('F:\Projet RPQ\Extracted_Data')
+load('TUG_Percent_Time_Frozen.mat')
+Percent_Time_Frozen(Participant,:) = PTF;
+
+cd('F:\Projet RPQ\Extracted_Data')
+save('TUG_Percent_Time_Frozen.mat','Percent_Time_Frozen')
+
+
+% Load and save PTF
+Percent_Time_Tremor_Walking = [NaN NaN NaN];
+Percent_Time_Tremor_NOWalking = [NaN NaN NaN];
+Tremor_Level = [NaN NaN NaN];
+
+cd('F:\Projet RPQ\Extracted_Data')
+load('TUG_Percent_Time_Tremor_Walking.mat')
+load('TUG_Percent_Time_Tremor_NOWalking.mat')
+load('TUG_Tremor_Level.mat')
+load('TUG_NO_Tremor_Level.mat')
+Percent_Time_Tremor_Walking(Participant,:) = mean(PTT_Walking);
+Percent_Time_Tremor_NOWalking(Participant,:) = mean(PTT_NOWalking);
+Tremor_Level(Participant,:) = mean(Tremor);
+
+% cd('F:\Projet RPQ\Extracted_Data')
+% save('TUG_Percent_Time_Tremor_Walking.mat','Percent_Time_Tremor_Walking')
+% save('TUG_Percent_Time_Tremor_NOWalking.mat','Percent_Time_Tremor_NOWalking')
+% save('TUG_Tremor_Level.mat','Tremor_Level')
 

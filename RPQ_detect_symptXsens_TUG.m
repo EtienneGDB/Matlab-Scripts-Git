@@ -3,7 +3,7 @@ close all ;
 clc ;
 
 % Participant to load
-Participant = 3;
+Participant = 2;
 if Participant < 10
     Participant_Name = sprintf('P0%s',num2str(Participant));
 else
@@ -47,14 +47,16 @@ addpath(genpath('C:\Users\p1098713\Documents\3.MATLAB\Fonctions\watch_extraction
 % end
 
 %% Load Watch Data
-cd([saveDir, '\Watch'])
-load(['P', num2str(Participant), '_Watch_TUG_3 combinés.mat'])
-Freq = 50;
+cd([saveDir, '\Xsens'])
+load(['P', num2str(Participant), '_Xsens_TUG_3 combinés_2.mat'])
+Freq = 60;
 
 %% Detect TUG parts
-acc_vect = Module(Watch_Data.Ankle.Wrist_Raw_Accelerometer);
-% [TaskSeg] = RPQ_ThreePeaksDetection(acc_vect, 50, 9, 1, 1, 1); % P2
-[TaskSeg] = RPQ_ThreePeaksDetection(acc_vect, 50, 2, 0, 1, 1);  % others
+globalAcc = DataXsens.acceleration.RightLowerLeg;
+localAcc = LocalRef(globalAcc,DataXsens.orientation.RightLowerLeg);
+acc_vect = Module(localAcc);
+% [TaskSeg] = RPQ_ThreePeaksDetection(acc_vect, 60, 9, 1, 1, 1); % P2
+[TaskSeg] = RPQ_ThreePeaksDetection(acc_vect, 60, 2, 0, 1, 1);  % others
 
 % %% Detect walking periods
 % config.acc.Fe = 50;
@@ -87,8 +89,8 @@ acc_vect = Module(Watch_Data.Ankle.Wrist_Raw_Accelerometer);
 % title([num2str(totalStep) ' pas, cad:', num2str(totalCad), ', detected step periods: ' num2str(numberOfStepPeriods)]);
 
 %% Detect Freezing
-[b,a] = butter(2,2*[0.5 15]/50);
-FiltreAcc_Ankle = filtfilt(b,a,Watch_Data.Ankle.Wrist_Raw_Accelerometer);
+[b,a] = butter(2,2*[0.5 15]/60);
+FiltreAcc_Ankle = filtfilt(b,a,globalAcc);
 figure;
 axe = {'x','y','z'};
 for iaxe = 1:3
@@ -96,17 +98,25 @@ for iaxe = 1:3
     title(['Filtered Ankle Accleration ', axe{iaxe}])
 end
 
-% Gyro
-[b,a] = butter(2,2*[0.5 15]/50);
-FiltreGyr_Ankle = filtfilt(b,a,Watch_Data.Ankle.Wrist_Raw_Gyro);
-figure;
-axe = {'x','y','z'};
-for iaxe = 1:3
-    subplot(3,1,iaxe); plot(FiltreGyr_Ankle(:,iaxe))
-%     hold on
-%     subplot(3,1,iaxe); plot(FiltreAcc_Ankle(:,iaxe))
-    title(['Filtered Ankle Gyro ', axe{iaxe}])
-end
+% % Gyro
+% globalGyr = DataXsens.angularVelocity.RightLowerLeg;
+% localGyr = LocalRef(globalGyr, DataXsens.orientation.RightLowerLeg);
+% 
+% [b,a] = butter(2,2*[1]/50,'low');
+% FiltreGyr_Ankle_global = filtfilt(b,a,globalGyr);
+% FiltreGyr_Ankle_local = filtfilt(b,a,localGyr);
+% figure(2); figure(3)
+% axe = {'x','y','z'};
+% for iaxe = 1:3
+%     figure(2)
+%     subplot(3,1,iaxe); plot(FiltreGyr_Ankle_global(:,iaxe))
+%     title(['Filtered Ankle Gyro Global ', axe{iaxe}])
+%     figure(3)
+%     subplot(3,1,iaxe); plot(abs(FiltreGyr_Ankle_local(:,iaxe)))
+%     title(['Filtered Ankle Gyro Local ', axe{iaxe}])
+% %     hold on
+% %     subplot(3,1,iaxe); plot(FiltreAcc_Ankle(:,iaxe))
+% end
 
 % figure;
 % for iWalking = 1:length(TaskSeg)
@@ -114,7 +124,7 @@ end
 %     title(['Filtered Ankle Accleration ', num2str(iWalking)])
 %     spec_fft(FiltreAcc_Ankle(TaskSeg(iWalking,1):TaskSeg(iWalking,2),1),50,1)
 % end
-[coefAcc fAcc] = cwt(FiltreAcc_Ankle(:,1),'amor',50);
+[coefAcc fAcc] = cwt(FiltreAcc_Ankle(:,3),'amor',50);
 norm = abs(coefAcc).^2;
 
 [PowerMVT, ...
@@ -131,6 +141,9 @@ PeakPower, ...
 PeakPower_MVTband, ...
 PeakPower_Tremorband] = ...
 RPQ_Compute_Power(norm, fAcc);
+
+figure; plot(PowerFoG./PowerMVT)
+figure; plot(PowerMVT)
 
 figure;
 Thresh_Freezing = 3;
@@ -160,13 +173,19 @@ cd('F:\Projet RPQ\Extracted_Data')
 save('TUG_Percent_Time_Frozen.mat','Percent_Time_Frozen')
 
 %% Detect Tremor
-[b,a] = butter(2,2*[0.5 15]/50);
-FiltreAcc_Wrist = filtfilt(b,a,Watch_Data.Wrist.Wrist_Raw_Accelerometer);
-figure;
+SegmentNames = fieldnames(DataXsens.acceleration);
+SegmentNames([1:9, 11:13, 15:23]) = [];
+for iSegments = 1:length(SegmentNames)
+globalAcc = DataXsens.acceleration.(SegmentNames{iSegments});
+localAcc = LocalRef(globalAcc,DataXsens.orientation.(SegmentNames{iSegments}));
+
+[b,a] = butter(2,2*[0.5 15]/60);
+FiltreAcc_Wrist = filtfilt(b,a,localAcc);
+figure();
 axe = {'x','y','z'};
 for iaxe = 1:3
     subplot(3,1,iaxe); plot(FiltreAcc_Wrist(:,iaxe))
-    title(['Filtered Wrist Accleration ', axe{iaxe}])
+    title(['Filtered Accleration ', (SegmentNames{iSegments}), ' ', axe{iaxe}])
 end
 
 % figure;
@@ -177,7 +196,7 @@ end
 % end
 
 for iaxe = 1:3
-    [coefAcc fAcc] = cwt(FiltreAcc_Wrist(:,iaxe),'amor',50);
+    [coefAcc fAcc] = cwt(FiltreAcc_Wrist(:,iaxe),'amor',Freq);
     norm = abs(coefAcc).^2;
 
     [PowerMVT(:,iaxe),...
@@ -214,8 +233,7 @@ PowerMVT_Sum = sum(PowerMVT,2);
 % figure;plot(R1)
 % figure;plot(R2)
 
-figure;
-for iWalking = 1:length(TaskSeg)
+for iWalking = 3%:length(TaskSeg)
     WalkingTime = length(TaskSeg(iWalking,1):TaskSeg(iWalking,2));
     % Main Tremor Axis
     MedTremorAxis = median(PowerTremor(TaskSeg(iWalking,1):TaskSeg(iWalking,2),:));
@@ -225,32 +243,37 @@ for iWalking = 1:length(TaskSeg)
     NO_Tremor_Values = PowerMVT_Sum(TaskSeg(iWalking,1):TaskSeg(iWalking,2));
     
     % Percent time with Tremor
-    Tremor_Freq = PeakPower_Freq(TaskSeg(iWalking,1):TaskSeg(iWalking,2),Main_Tremor_Axis);
-    PTT(:,iWalking) = (length(Tremor_Freq(Tremor_Freq>=4 & Tremor_Freq<=7))/WalkingTime)*100;
-%     figure; plot(Tremor_Freq)
+    Tremor_Freq(:,iSegments) = PeakPower_Freq(TaskSeg(iWalking,1):TaskSeg(iWalking,2),Main_Tremor_Axis);
+    PTT(iSegments,iWalking) = (length(Tremor_Freq(Tremor_Freq(:,iSegments)>=4 & Tremor_Freq(:,iSegments)<=7,iSegments))/WalkingTime)*100;
+    figure(); plot(Tremor_Freq(:,iSegments))
+    title(['TremorFreq TUG ', SegmentNames{iSegments}, ' ', num2str(iWalking)])
     
     % Tremor values
-    if ~isempty(Tremor_Values(Tremor_Freq>=4 & Tremor_Freq<=7))
-        idx = find(Tremor_Values(Tremor_Freq>=4 & Tremor_Freq<=7));
+    if ~isempty(Tremor_Values(Tremor_Freq(:,iSegments)>=4 & Tremor_Freq(:,iSegments)<=7))
+        idx = find(Tremor_Values(Tremor_Freq(:,iSegments)>=4 & Tremor_Freq(:,iSegments)<=7));
 %         Tremor(:,iWalking) = median(Tremor_Values(Tremor_Freq>=4 & Tremor_Freq<=7));
-        Tremor(:,iWalking) = median(Tremor_Values(idx)./NO_Tremor_Values(idx));
+        Tremor(iSegments,iWalking) = median(Tremor_Values(idx)./NO_Tremor_Values(idx));
     else
-        Tremor(:,iWalking) = 0;
+        Tremor(iSegments,iWalking) = 0;
     end
     
     % NO Tremor values
     if ~isempty(NO_Tremor_Values)
-        NO_Tremor(:,iWalking) = median(NO_Tremor_Values);
+        NO_Tremor(iSegments,iWalking) = median(NO_Tremor_Values);
     else
-        NO_Tremor(:,iWalking) = 0;
+        NO_Tremor(iSegments,iWalking) = 0;
     end
     
-    subplot(3,1,iWalking); plot(Tremor_Values./NO_Tremor_Values)
+%     subplot(3,1,iWalking); plot(Tremor_Values./NO_Tremor_Values)
+    figure()
+    plot(Tremor_Values./NO_Tremor_Values)
     text(length(Tremor_Values)-length(Tremor_Values)*0.2,max(Tremor_Values)-max(Tremor_Values)*0.2,['%timeTremor:', num2str(PTT(iWalking))])
-    title(['Tremor TUG', num2str(iWalking)])
+    title(['Tremor TUG ', SegmentNames{iSegments}, ' ', num2str(iWalking)])
 
 %     figure; plot(Tremor_Values)
 %     figure; plot(NO_Tremor_Values)
+end
+% pause()
 end
 
 cd('F:\Projet RPQ\Extracted_Data')

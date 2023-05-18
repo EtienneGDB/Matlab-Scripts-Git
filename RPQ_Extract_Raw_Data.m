@@ -3,7 +3,7 @@ close all ;
 clc ;
 
 % Participant to export
-Participant = 6;
+Participant = 9;
 if Participant < 10
     Participant_Name = sprintf('P0%s',num2str(Participant));
 else
@@ -45,7 +45,7 @@ file_partinfo = fullfile(dataPath, excelfile);
 % [num, txt, raw] = xlsread(file_partinfo,'Sheet1');
 [num, txt, raw] = xlsread(file_partinfo);
 keep_raw = raw; keep_txt = txt; keep_num = num;
-for iL = 1:length(keep_raw)
+for iL = 1:size(keep_raw,1)
     if keep_raw{iL,1}(end) == '1' | keep_raw{iL,1}(end) == '2'
         keep_raw(iL,:) = [];
         keep_txt(iL,:) = [];
@@ -55,6 +55,8 @@ for iL = 1:length(keep_raw)
         break
     end
 end
+cd([saveDir '\FileNames'])
+save(['P', num2str(Participant), '_FileNames', '.mat'], 'keep_raw')
 
 %% Load and save OptiTrack Data into .mat
 if OPTI
@@ -295,6 +297,7 @@ if WATCH
 
     % Find peaks feet tapping
     BestSensor = 'Wrist_Raw_Accelerometer';
+    figure; plot(Watch_allData_Modif.(Type{2}).(BestSensor)(:,1)*9.81)
     Rectified_Sum = sum(abs(Watch_allData_Modif.(Type{2}).(BestSensor)),2);
 %     Rectified_Sum = abs(Watch_allData.(Type{2}).(BestSensor)(:,3));
     [PKS,LOCS] = findpeaks(Rectified_Sum,'MinPeakDistance',250,'SortStr','descend','NPeaks',6);
@@ -374,6 +377,48 @@ if WATCH
     plot(LOCS,PKS(1:length(LOCS)),'*','color','red')
     pause()
     close all;
+    
+    %P7
+    LOCS(1) = 59370;
+    LOCS(2) = 68100;
+    LOCS(3) = 75950;
+    LOCS(4) = 90770;
+    LOCS(5) = 129100;
+    LOCS(6) = 152400;
+    LOCS = sort(LOCS);
+    plot(Rectified_Sum);
+    hold on;
+    plot(LOCS,PKS(1:length(LOCS)),'*','color','red')
+    pause()
+    close all;
+    
+    %P8
+    LOCS(1) = 68700;
+    LOCS(2) = 76100;
+    LOCS(3) = 77190;
+    LOCS(4) = 84560;
+    LOCS(5) = 106900;
+    LOCS(6) = 128800;
+    LOCS = sort(LOCS);
+    plot(Rectified_Sum);
+    hold on;
+    plot(LOCS,PKS(1:length(LOCS)),'*','color','red')
+    pause()
+    close all;
+
+    %P9
+    LOCS(1) = 57197;
+    LOCS(2) = 60300;
+    LOCS(3) = 70513;
+    LOCS(4) = 75613;
+    LOCS(5) = 94900;
+    LOCS(6) = 117734;
+    LOCS = sort(LOCS);
+    plot(Rectified_Sum);
+    hold on;
+    plot(LOCS,PKS(1:length(LOCS)),'*','color','red')
+    pause()
+    close all;
 %     %----------------------------
 
     % Define segments
@@ -406,29 +451,29 @@ if WATCH
         inc = inc+1;
     end
     
-    % P3, P4, P5, P6
+    % P3, P4, P5, P6, P7, P8, P9
     segments = [];
     inc = 1;
     for iLOCS = 1:length(LOCS)
         if iLOCS == 1
             segments(1,inc) = LOCS(iLOCS)-100;
-            segments(2,inc) = LOCS(iLOCS)+30*Freq;
+            segments(2,inc) = LOCS(iLOCS)+40*Freq;
+        elseif iLOCS == 2
+            segments(1,inc) = LOCS(iLOCS)-200;
+            segments(2,inc) = LOCS(iLOCS)+20*Freq;
         elseif iLOCS == 3
             segments(1,inc) = LOCS(iLOCS)-100;
-            segments(2,inc) = LOCS(iLOCS)+LOCS(iLOCS)-LOCS(iLOCS-1);
+            segments(2,inc) = LOCS(iLOCS)+11*Freq;
         elseif iLOCS == 4
             segments(1,inc) = LOCS(iLOCS)-100;
-            segments(2,inc) = LOCS(iLOCS)+3.2*60*50;
+            segments(2,inc) = LOCS(iLOCS)+3.5*60*Freq;
         elseif iLOCS == 5
             segments(1,inc) = LOCS(iLOCS)-100;
-            segments(2,inc) = LOCS(iLOCS)+4.2*60*50;
+            segments(2,inc) = LOCS(iLOCS)+4.5*60*Freq;
         elseif iLOCS == length(LOCS)
             segments(1,inc) = LOCS(iLOCS)-100;
-            segments(2,inc) = LOCS(iLOCS)+5.2*60*Freq;
+            segments(2,inc) = LOCS(iLOCS)+5.5*60*Freq;
             break
-        else
-            segments(1,inc) = LOCS(iLOCS)-200;
-            segments(2,inc) = LOCS(iLOCS+1)-200;
         end
         inc = inc+1;
     end
@@ -511,19 +556,22 @@ if WATCH
 end
 
 
-
-% %% Test plot
-% angleLabel = fieldnames(DataXsens.jointAngle);
-% for iJoint = 1:nJoint
-%     inc =1;
-%     for iAxe = 1:3
-%         subplot(1,3,inc)
-%         t = (0:length(DataXsens.jointAngle.(angleLabel{iJoint})(:,iAxe))-1)/60;
-%         plot(t(1015:1085),DataXsens.jointAngleXZY.(angleLabel{iJoint})(1015:1085,iAxe))
-%         title(angleLabel{iJoint})
-%         inc = inc+1;
-%     end
-%     pause()
-% end
+% %% Extract InfoMontres Data
+% watch_acc = load('F:\Projet RPQ\Infos montres\InfoMontres\TestMontresAntoine\Recordsets\StatiqueMontrePlat\Wrist_Raw_Accelerometer.mat');
+% watch_gyr = load('F:\Projet RPQ\Infos montres\InfoMontres\TestMontresAntoine\Recordsets\StatiqueMontrePlat\Wrist_Raw_Gyro.mat');
+% Acc = watch_acc.RawAccelerometer.values(:,[2, 4, 6]);
+% Gyr = watch_gyr.RawGyro.values(:,[2, 4, 6]);
+% Freq = 50;
 % 
-% t2 = (0:length(rawOpti.RPSI)-1)/100;
+% % Filter gravity
+% [b,a] = butter(2,2*0.5/Freq,'high');
+% Acc_static = filtfilt(b,a,Acc);
+% Gyr_static = Gyr;
+% 
+% figure; plot(Acc_static)
+% figure; plot(Gyr_static)
+% 
+% cd('F:\Projet RPQ\Infos montres')
+% save('Acc_static.mat','Acc_static')
+% save('Gyr_static.mat','Gyr_static')
+
