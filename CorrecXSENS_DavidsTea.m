@@ -14,10 +14,10 @@ addpath(genpath('\\10.89.24.15\E\Bureau\Etienne\MATLAB\Functions\Entropy Fouaz')
 
 FoldersNames = dir('\\10.89.24.15\q\IRSST_DavidsTea\Raw_Data');
 Subjects = {...
-    FoldersNames(3:length(FoldersNames)).name... % May change if others files different from subject were add
+    FoldersNames(4:34).name... % May change if others files different from subject were add
     } ;
 
-Task =  'RPT';  % 'Work' / 'RPT' / 'SP'
+Task =  'Work';  % 'Work' / 'RPT' / 'SP'
 tic
 parametre  = {'Acceleration','Angular_Velocity','Jerk','Module_Acceleration',...
     'Module_Angular_Velocity','Module_Jerk'};
@@ -42,7 +42,7 @@ for ipar = 1:length(parametre)
     end
 end
 
-for iSubjects = 29%:length(Subjects)
+for iSubjects = 30:length(Subjects)
     Task = convertCharsToStrings(Task);
     
     if Task == 'SP'
@@ -94,9 +94,9 @@ for iSubjects = 29%:length(Subjects)
             else
                 thresh = mdsig-15*varsig;
             end
-            if Task == 'RPT'
-                thresh = -6.5;
-            end
+%             if Task == 'RPT'
+%                 thresh = -6.5;
+%             end
             
             FrameToCorrec = find(sig < thresh);
             if length(FrameToCorrec) > 0
@@ -163,11 +163,11 @@ for iSubjects = 29%:length(Subjects)
 %         cd(['\\10.89.24.15\q\IRSST_DavidsTea\Data_exported\XSENS\Matlab\Filtered\Working_Task'])
 %         MVNBL_Work = TempMVNBL;
 %         save(['CO_filtredXSENS_Work_' (Subjects{iSubjects}) '.mat'],'MVNBL_Work')
-    if Task == 'RPT'
-        cd(['\\10.89.24.15\q\IRSST_DavidsTea\Data_exported\XSENS\Matlab\Filtered\RPT'])
-        MVNBL_RPT = TempMVNBL;
-        save(['CO_filtredXSENS_RPT_' (Subjects{iSubjects}) '.mat'],'MVNBL_RPT')
-    end
+%     if Task == 'RPT'
+%         cd(['\\10.89.24.15\q\IRSST_DavidsTea\Data_exported\XSENS\Matlab\Filtered\RPT'])
+%         MVNBL_RPT = TempMVNBL;
+%         save(['CO_filtredXSENS_RPT_' (Subjects{iSubjects}) '.mat'],'MVNBL_RPT')
+%     end
 
     
 end
