@@ -38,13 +38,27 @@ for iseq = 1:length(seq)
     MeanPain_blocks(:,iseq) = mean([ArmPain_blocks(:,iseq) ShoulderPain_blocks(:,iseq) NeckPain_blocks(:,iseq)],2);
 end
 
+Participants_effort = [1,2,7,8,9,10,11,14,15,20,22,23,26];
+Participants_NOeffort = [3,4,5,6,12,13,16,17,18,19,21,24,25,27,28,29,30,31];
 
-% Save
-cd(['\\10.89.24.15\q\IRSST_DavidsTea\Data_extracted'])
-save(['Effort_blocks.mat'],'Effort_blocks');
-save(['ArmPain_blocks.mat'],'ArmPain_blocks');
-save(['ShoulderPain_blocks.mat'],'ShoulderPain_blocks');
-save(['NeckPain_blocks.mat'],'NeckPain_blocks');
-save(['Perf_blocks.mat'],'Perf_blocks');
-save(['MeanPain_blocks.mat'],'MeanPain_blocks');
+Participants_pain = [1,2,5,7,8,9,11,14,15,16,17,22,26];
+Participants_NOpain = [3,4,6,10,12,13,18,19,20,21,23,24,25,27,28,29,30,31];
+
+Effort_blocks_PartEffort = Effort_blocks(Participants_effort,:);
+MeanPain_blocks_PartPain = MeanPain_blocks(Participants_pain,:);
+Perf_blocks_PartEffort = Perf_blocks(Participants_effort,:);
+
+Effort_blocks_PartNOEffort = Effort_blocks(Participants_NOeffort,:);
+MeanPain_blocks_PartNOPain = MeanPain_blocks(Participants_NOpain,:);
+Perf_blocks_PartNOEffort = Perf_blocks(Participants_NOeffort,:);
+
+
+% % Save
+% cd(['\\10.89.24.15\q\IRSST_DavidsTea\Data_extracted'])
+% save(['Effort_blocks.mat'],'Effort_blocks');
+% save(['ArmPain_blocks.mat'],'ArmPain_blocks');
+% save(['ShoulderPain_blocks.mat'],'ShoulderPain_blocks');
+% save(['NeckPain_blocks.mat'],'NeckPain_blocks');
+% save(['Perf_blocks.mat'],'Perf_blocks');
+% save(['MeanPain_blocks.mat'],'MeanPain_blocks');
 

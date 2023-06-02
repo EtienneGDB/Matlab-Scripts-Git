@@ -35,7 +35,7 @@ for iTask = 1:length(Tasks)
     X_MatKernel = [];
     inc = 1;
     % spec_features.MatJamovi.Acceleration.MedianFreq.Pelvis.x(:,1:2);
-    for ipar = 1:length(parametre)
+    for ipar = 1:3%length(parametre)
         for iind = 1:length(indicateur)
             for iSeg = 1:length(Seg_of_interest)
 
@@ -61,7 +61,7 @@ for iTask = 1:length(Tasks)
         end
     end
 
-    for ipar = 1:length(parametre)
+    for ipar = 1:3%length(parametre)
         for iind = 1:length(indicateur_time)
             for iSeg = 1:length(Seg_of_interest)
 
@@ -86,6 +86,8 @@ for iTask = 1:length(Tasks)
             end
         end
     end
+    X_MatKernel_var = X_MatKernel;
+    X_MatKernel_var(1:10:310,:) = [];
 
 
     % Y_MatKernel
@@ -94,6 +96,7 @@ for iTask = 1:length(Tasks)
 
     Variables = {'Effort', 'Arm pain', 'Shoulder pain', 'Neck pain', 'Cycle/s'} ;
     Y_MatKernel = [];
+    Y_MatKernel_var = [];
     inc = 1;
     for iS = 1:31
         CR100Table = [];
@@ -101,6 +104,7 @@ for iTask = 1:length(Tasks)
         load(['CR100_' Subjects{iS} '.mat'])
         % Y_MatKernel = [Y_MatKernel; CR100Table(:,:)];
         Y_MatKernel = [Y_MatKernel; [CR100Table(:,1) mean(CR100Table(:,2:4),2)]];
+        Y_MatKernel_var = [Y_MatKernel_var; [diff(CR100Table(:,1)) diff(mean(CR100Table(:,2:4),2))]];
     end
 
     cd('\\10.89.24.15\q\IRSST_DavidsTea')
@@ -112,27 +116,51 @@ for iTask = 1:length(Tasks)
     Y_MatKernel(:,size(Y_MatKernel,2)+1) = temp;
 
     Lign_Participants = spec_features.MatJamovi.Acceleration.MedianFreq.Pelvis.x(:,1);
+    Lign_Participants_var = Lign_Participants;
+    Lign_Participants_var(1:10:310,:) = [];
     Lign_Trial = repmat([1:10]',31,1);
+    Lign_Trial_var = Lign_Trial;
+    Lign_Trial_var(1:10:310) = [];
 
     Lign_Participants(isnan(X_MatKernel(:,1)),:) = [];
+    Lign_Participants_var(isnan(Y_MatKernel_var(:,1)),:) = [];
     Lign_Trial(isnan(X_MatKernel(:,1)),:) = [];
+    Lign_Trial_var(isnan(Y_MatKernel_var(:,1)),:) = [];
 
     Y_MatKernel(isnan(X_MatKernel(:,1)),:) = [];
+    X_MatKernel_var(isnan(Y_MatKernel_var(:,1)),:) = [];
     X_MatKernel(isnan(X_MatKernel(:,1)),:) = [];
+    Y_MatKernel_var(isnan(Y_MatKernel_var(:,1)),:) = [];
 
     % Save MatKernel
     cd(['\\10.89.24.15\q\IRSST_DavidsTea\Data_extracted'])
-    save(['X_MatKernel_' Task '.mat'],'X_MatKernel');
-    save(['Y_MatKernel_' Task '.mat'],'Y_MatKernel');
-    save('VarNames.mat',"VarNames");
-    save(['Lign_Participants_' Task '.mat'],"Lign_Participants");
-    save(['Lign_Trial_' Task '.mat'],"Lign_Trial");
+    % save(['X_MatKernel_' Task '.mat'],'X_MatKernel');
+    % save(['Y_MatKernel_' Task '.mat'],'Y_MatKernel');
+    % save('VarNames.mat',"VarNames");
+    % save(['Lign_Participants_' Task '.mat'],"Lign_Participants");
+    % save(['Lign_Trial_' Task '.mat'],"Lign_Trial");
+
+    % save(['X_MatKernel_var_' Task '.mat'],'X_MatKernel_var');
+    % save(['Y_MatKernel_var_' Task '.mat'],'Y_MatKernel_var');
+    % save(['Lign_Participants_var_' Task '.mat'],"Lign_Participants_var");
+    % save(['Lign_Trial_var_' Task '.mat'],"Lign_Trial_var");
+
+    X_MatKernel = X_MatKernel(:,4:4:2112);
+    VarNames = VarNames(:,4:4:2112);
+
+    save(['X_MatKernel_Meanxyz_' Task '.mat'],'X_MatKernel');
+    save(['Y_MatKernel_Meanxyz_' Task '.mat'],'Y_MatKernel');
+    save('VarNames_Meanxyz.mat',"VarNames");
+    save(['Lign_Participants_Meanxyz_' Task '.mat'],"Lign_Participants");
+    save(['Lign_Trial_Meanxyz_' Task '.mat'],"Lign_Trial");
 
 end
 
-RMSE_CrossVal = aaa;
+aaa = [];
+% RMSE_CrossVal = aaa;
 VarExplained_LOO = aaa;
-save(['RMSE_CrossVal_LOO_' Task '_pain.mat'],"RMSE_CrossVal");
+cd(['\\10.89.24.15\q\IRSST_DavidsTea\Data_extracted'])
+% save(['RMSE_CrossVal_LOO_' Task '_pain.mat'],"RMSE_CrossVal");
 save(['VarExplained_LOO_' Task '_pain.mat'],"VarExplained_LOO");
 
 
