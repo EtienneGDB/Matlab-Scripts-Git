@@ -3,7 +3,7 @@ close all ;
 clc ;
 
 % Participant to export
-Participant = 9;
+Participant = 14;
 if Participant < 10
     Participant_Name = sprintf('P0%s',num2str(Participant));
 else
@@ -32,7 +32,7 @@ if isempty(excelfile)
     display('SVP vous assurez que la liste des essais est compilée dans un fichier excel!')
     return
 elseif size(excelfile,1)>=1
-    for i=size(excelfile,1)
+    for i=1:size(excelfile,1)
         tst = excelfile(i).name;
         if isempty(strfind(tst,'~$'))
             excelfile = excelfile(i).name;
@@ -166,6 +166,7 @@ end
 if XSENS
     segmentData_of_Interest = {'orientation', 'angularVelocity', 'acceleration', 'position'};
     jointData_of_Interest = {'jointAngle', 'jointAngleXZY'};
+    SensorData_of_Interest = {'sensorFreeAcceleration', 'sensorMagneticField', 'sensorOrientation'};
 
     xsensFolder = fullfile(dataPath, 'Xsens');
     fileList = dir([xsensFolder, '\*', '.mvnx']);
@@ -198,10 +199,22 @@ if XSENS
             
         end
 
+        % Sensor
+        for iSensor = 1:17
+            tempLabel = mvnx_file.sensorData(iSensor).label;
+            
+            for iSensorData_of_Interest = 1:length(SensorData_of_Interest)
+                DataXsens.(SensorData_of_Interest{iSensorData_of_Interest}).(tempLabel) = ...
+                    mvnx_file.sensorData(iSensor).(SensorData_of_Interest{iSensorData_of_Interest});
+            end
+            
+        end
+
         cd([saveDir, '\Xsens'])
         save(['P', num2str(Participant), '_Xsens_', keep_raw{(iFile)+1,1}, '.mat'], 'DataXsens')
     end
 end
+% save(['P', num2str(Participant), '_Xsens_', keep_raw{(iFile)+1,1}, '_Karina.mat'], 'DataXsens')
 
 %% Load and save Watch Data into .mat
 if WATCH
@@ -223,34 +236,23 @@ if WATCH
             Minutes = minute(convTime)+Hour;
             Minutes = ((Minutes-Minutes(1))*60);
             Time = second(convTime)+Minutes;
-%             for iaxe = 1:3
-%                 figure; plot(WatchData_of_Interest(:,iaxe))
-%             end
             if iFileNames == 1
                 % Filter gravity
                 [b,a] = butter(2,2*0.5/50,'high');
                 FiltreGravity = filtfilt(b,a,WatchData_of_Interest);
-                Watch_allData.(Type{iType}).(FileNames{iFileNames}) = FiltreGravity;
-                Time_allData.(Type{iType}).(FileNames{iFileNames}) = Time;
-            else
-                Watch_allData.(Type{iType}).(FileNames{iFileNames}) = WatchData_of_Interest;
-                Time_allData.(Type{iType}).(FileNames{iFileNames}) = Time;
+                Watch_allData.(Type{iType}).Free_Acceleration = FiltreGravity;
+                Time_allData.(Type{iType}).Free_Acceleration = Time;
             end
+            Watch_allData.(Type{iType}).(FileNames{iFileNames}) = WatchData_of_Interest;
+            Time_allData.(Type{iType}).(FileNames{iFileNames}) = Time;
             figure; plot(Time, sum(abs(Watch_allData.(Type{iType}).(FileNames{iFileNames})),2))
             title([Type{iType} ' ' FileNames{iFileNames}])
-            
-%             for iaxe = 1:3
-%                 figure; plot(Time, Watch_allData.(Type{iType}).(FileNames{iFileNames})(:,iaxe))
-%                 title([Type{iType} ' ' FileNames{iFileNames}])
-%                 pause;
-%                 close all;
-%             end
-            
         end
     end
-    
+    FileNames = [FileNames {'Free_Acceleration'}];
+
     % Synchronize signaux
-    BestSensor = 'Wrist_Raw_Accelerometer';
+    BestSensor = 'Free_Acceleration';
     for iType = 1:2
         Rectified_Sum = sum(abs(Watch_allData.(Type{iType}).(BestSensor)),2);
         [PKS,LOCS] = findpeaks(Rectified_Sum,'MinPeakDistance',250,'SortStr','descend','NPeaks',1);
@@ -264,14 +266,16 @@ if WATCH
     LOCS_Peak(1)=LOCS_Selec1(1);
     LOCS_Peak(2)=LOCS_Selec2(1);
     
-    T1 = Time_allData.(Type{1}).Wrist_Raw_Accelerometer(LOCS_Peak(1),:);
-    T2 = Time_allData.(Type{2}).Wrist_Raw_Accelerometer(LOCS_Peak(2),:);
+    T1 = Time_allData.(Type{1}).(BestSensor)(LOCS_Peak(1),:);
+    T2 = Time_allData.(Type{2}).(BestSensor)(LOCS_Peak(2),:);
     
     Watch_allData_Modif = Watch_allData;
     Time_allData_Modif = Time_allData;
     if LOCS_Peak(2) > LOCS_Peak(1)
 %         Watch_allData_Modif.(Type{2}).Wrist_Raw_Accelerometer = Watch_allData.(Type{2}).Wrist_Raw_Accelerometer(diff(LOCS_Peak)+1:end,:);
 %         Watch_allData_Modif.(Type{2}).Wrist_Raw_Gyro = Watch_allData.(Type{2}).Wrist_Raw_Gyro(diff(LOCS_Peak)+1:end,:);
+        Time_allData_Modif.(Type{1}).Free_Acceleration = ...
+            Time_allData.(Type{1}).Free_Acceleration + abs(T2-T1);
         Time_allData_Modif.(Type{1}).Wrist_Raw_Accelerometer = ...
             Time_allData.(Type{1}).Wrist_Raw_Accelerometer + abs(T2-T1);
         Time_allData_Modif.(Type{1}).Wrist_Raw_Gyro = ...
@@ -279,6 +283,8 @@ if WATCH
     else
 %         Watch_allData_Modif.(Type{1}).Wrist_Raw_Accelerometer = Watch_allData.(Type{1}).Wrist_Raw_Accelerometer(abs(diff(LOCS_Peak))+1:end,:);
 %         Watch_allData_Modif.(Type{1}).Wrist_Raw_Gyro = Watch_allData.(Type{1}).Wrist_Raw_Gyro(abs(diff(LOCS_Peak))+1:end,:);
+        Time_allData_Modif.(Type{2}).Free_Acceleration = ...
+            Time_allData.(Type{2}).Free_Acceleration + abs(T2-T1);
         Time_allData_Modif.(Type{2}).Wrist_Raw_Accelerometer = ...
             Time_allData.(Type{2}).Wrist_Raw_Accelerometer + abs(T2-T1);
         Time_allData_Modif.(Type{2}).Wrist_Raw_Gyro = ...
@@ -296,7 +302,7 @@ if WATCH
     end
 
     % Find peaks feet tapping
-    BestSensor = 'Wrist_Raw_Accelerometer';
+    BestSensor = 'Free_Acceleration';
     figure; plot(Watch_allData_Modif.(Type{2}).(BestSensor)(:,1)*9.81)
     Rectified_Sum = sum(abs(Watch_allData_Modif.(Type{2}).(BestSensor)),2);
 %     Rectified_Sum = abs(Watch_allData.(Type{2}).(BestSensor)(:,3));
@@ -313,9 +319,11 @@ if WATCH
 %     PeakToDelete = [8];
 %     LOCS(PeakToDelete) = [];
     LOCS(1) = 49200;
-    LOCS(6) = 58390;
-    LOCS(7) = 78490;
-    LOCS(8) = 157500;
+    LOCS(2) = 58390;
+    LOCS(3) = 60252;
+    LOCS(4) = 78490;
+    LOCS(5) = 107509;
+    LOCS(6) = 157500;
     LOCS = sort(LOCS);
     plot(Rectified_Sum);
     hold on;
@@ -324,8 +332,8 @@ if WATCH
     close all;
     
     %P3
-    PeakToDelete = [7; 8];
-    LOCS(PeakToDelete) = [];
+    % PeakToDelete = [7; 8];
+    % LOCS(PeakToDelete) = [];
     LOCS(1) = 38210;
     LOCS(2) = 45380;
     LOCS(4) = 62920;
@@ -339,10 +347,11 @@ if WATCH
     close all;
     
     %P4
-    PeakToDelete = [7; 8];
-    LOCS(PeakToDelete) = [];
-    LOCS(1) = 95350;
+    % PeakToDelete = [7; 8];
+    % LOCS(PeakToDelete) = [];
     LOCS(5) = 112500;
+    LOCS(6) = 95346;
+    LOCS(3) = 97537;
     LOCS = sort(LOCS);
     plot(Rectified_Sum);
     hold on;
@@ -351,12 +360,12 @@ if WATCH
     close all;
     
     %P5
-    PeakToDelete = [7; 8];
-    LOCS(PeakToDelete) = [];
+    % PeakToDelete = [7; 8];
+    % LOCS(PeakToDelete) = [];
     LOCS(1) = 34560;
     LOCS(2) = 41910;
-    LOCS(3) = 44010;
-    LOCS(6) = 58740;
+    LOCS(5) = 44010;
+    LOCS(6) = 58766;
     LOCS = sort(LOCS);
     plot(Rectified_Sum);
     hold on;
@@ -419,6 +428,66 @@ if WATCH
     plot(LOCS,PKS(1:length(LOCS)),'*','color','red')
     pause()
     close all;
+
+    %P10
+    LOCS(1) = 54213;
+    LOCS(2) = 61018;
+    LOCS(3) = 62900;
+    LOCS(4) = 70300;
+    LOCS(5) = 88130;
+    LOCS(6) = 108560;
+    LOCS = sort(LOCS);
+    plot(Rectified_Sum);
+    hold on;
+    plot(LOCS,PKS(1:length(LOCS)),'*','color','red')
+    pause()
+    close all;
+
+    %P11
+    LOCS(1) = 60060;
+    LOCS(2) = 64460;
+    LOCS(3) = 66313;
+    LOCS(4) = 73818;
+    LOCS(5) = 89496;
+    LOCS(6) = 109360;
+    LOCS = sort(LOCS);
+    plot(Rectified_Sum);
+    hold on;
+    plot(LOCS,PKS(1:length(LOCS)),'*','color','red')
+    pause()
+    close all;
+
+    %P13
+    LOCS(1) = 29218;
+    LOCS(2) = 34857;
+    LOCS(3) = 35847;
+    LOCS(4) = 51186;
+    LOCS(5) = 68546;
+    LOCS(6) = 88806;
+    LOCS(7) = 124582;
+    LOCS(8) = 127149;
+    LOCS(9) = 134634;
+    LOCS = sort(LOCS);
+    plot(Rectified_Sum);
+    hold on;
+    plot(LOCS,repmat(min(PKS),length(LOCS),1),'*','color','red')
+    pause()
+    close all;
+
+    %P14
+    LOCS(1) = 35422;
+    LOCS(2) = 42116;
+    LOCS(3) = 42996;
+    LOCS(4) = 50431;
+    LOCS(5) = 68670;
+    LOCS(6) = 87747;
+    LOCS = sort(LOCS);
+    plot(Rectified_Sum);
+    hold on;
+    plot(LOCS,PKS(1:length(LOCS)),'*','color','red')
+    pause()
+    close all;
+
 %     %----------------------------
 
     % Define segments
@@ -450,8 +519,8 @@ if WATCH
         end
         inc = inc+1;
     end
-    
-    % P3, P4, P5, P6, P7, P8, P9
+
+    % P13
     segments = [];
     inc = 1;
     for iLOCS = 1:length(LOCS)
@@ -463,7 +532,43 @@ if WATCH
             segments(2,inc) = LOCS(iLOCS)+20*Freq;
         elseif iLOCS == 3
             segments(1,inc) = LOCS(iLOCS)-100;
-            segments(2,inc) = LOCS(iLOCS)+11*Freq;
+            segments(2,inc) = LOCS(iLOCS)+20*Freq;
+        elseif iLOCS == 4
+            segments(1,inc) = LOCS(iLOCS)-100;
+            segments(2,inc) = LOCS(iLOCS)+3.5*60*Freq;
+        elseif iLOCS == 5
+            segments(1,inc) = LOCS(iLOCS)-100;
+            segments(2,inc) = LOCS(iLOCS)+4.5*60*Freq;
+        elseif iLOCS == 6
+            segments(1,inc) = LOCS(iLOCS)-100;
+            segments(2,inc) = LOCS(iLOCS)+5.5*60*Freq;
+        elseif iLOCS == 7
+            segments(1,inc) = LOCS(iLOCS)-100;
+            segments(2,inc) = LOCS(iLOCS)+10*Freq;
+        elseif iLOCS == 8
+            segments(1,inc) = LOCS(iLOCS)-100;
+            segments(2,inc) = LOCS(iLOCS)+52*Freq;
+        elseif iLOCS == length(LOCS)
+            segments(1,inc) = LOCS(iLOCS)-100;
+            segments(2,inc) = LOCS(iLOCS)+3.5*60*Freq;
+            break
+        end
+        inc = inc+1;
+    end
+    
+    % Others
+    segments = [];
+    inc = 1;
+    for iLOCS = 1:length(LOCS)
+        if iLOCS == 1
+            segments(1,inc) = LOCS(iLOCS)-100;
+            segments(2,inc) = LOCS(iLOCS)+55*Freq;
+        elseif iLOCS == 2
+            segments(1,inc) = LOCS(iLOCS)-200;
+            segments(2,inc) = LOCS(iLOCS)+20*Freq;
+        elseif iLOCS == 3
+            segments(1,inc) = LOCS(iLOCS)-100;
+            segments(2,inc) = LOCS(iLOCS)+20*Freq;
         elseif iLOCS == 4
             segments(1,inc) = LOCS(iLOCS)-100;
             segments(2,inc) = LOCS(iLOCS)+3.5*60*Freq;
@@ -478,22 +583,7 @@ if WATCH
         inc = inc+1;
     end
     
-    
-%     segments(1,1) = LOCS(1)-200;
-%     segments(2,1) = LOCS(3)+LOCS(2)-LOCS(1);
-%     segments(1,2) = LOCS(3)+LOCS(2)-LOCS(1);
-%     segments(2,2) = LOCS(4)-200;
-%     segments(1,3) = LOCS(4)-200;
-%     segments(2,3) = LOCS(5)-200;
-%     segments(1,4) = LOCS(5)-200;
-%     segments(2,4) = LOCS(6)-200;
-%     segments(1,5) = LOCS(6)-200;
-%     segments(2,5) = LOCS(7)-200;
-%     segments(1,6) = LOCS(7)-200;
-%     segments(2,6) = LOCS(8)-200;
-%     segments(1,7) = LOCS(8)-200;
-%     segments(2,7) = min(length(Watch_allData.Wrist.Wrist_Raw_Gyro),length(Watch_allData.Ankle.Wrist_Raw_Gyro));
-    
+        
     % Segment Data
     Time_Ref = Time_allData_Modif.Ankle.Wrist_Raw_Accelerometer;
     for iFileSegmented = 1:6
@@ -528,7 +618,7 @@ if WATCH
         end
         
         % Interpolate for same length
-        Sig_Ref = Watch_Data.Wrist.Wrist_Raw_Accelerometer;
+        Sig_Ref = Watch_Data.Wrist.Free_Acceleration;
         inc = 1;
         for iType = 1:length(Type)
             for iFileNames = 1:length(FileNames)
@@ -537,7 +627,7 @@ if WATCH
                 
                 Watch_Data.(Type{iType}).(FileNames{iFileNames}) = Normalization;
 
-                subplot(2,2,inc); 
+                subplot(2,3,inc); 
                 plot(Normalization)
                 title([(Type{iType}) ' ' (FileNames{iFileNames})])
                 inc = inc +1;
@@ -548,13 +638,14 @@ if WATCH
 
         cd([saveDir, '\Watch'])
         % Before P6
-%         save(['P', num2str(Participant), '_Watch_', keep_raw{iFileSegmented+2,1}, '.mat'], 'Watch_Data')
+        % save(['P', num2str(Participant), '_Watch_', keep_raw{iFileSegmented+2,1}, '.mat'], 'Watch_Data')
         % From P6
         save(['P', num2str(Participant), '_Watch_', keep_raw{iFileSegmented+3,1}, '.mat'], 'Watch_Data')
     end
         
 end
 
+% save(['P', num2str(Participant), '_Watch_', keep_raw{iFileSegmented+3,1}, '_Karina.mat'], 'Watch_Data')
 
 % %% Extract InfoMontres Data
 % watch_acc = load('F:\Projet RPQ\Infos montres\InfoMontres\TestMontresAntoine\Recordsets\StatiqueMontrePlat\Wrist_Raw_Accelerometer.mat');

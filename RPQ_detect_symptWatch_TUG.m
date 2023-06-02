@@ -6,25 +6,25 @@ clc ;
 Task = '4min Free';
 Xunit = 'Frame';
 
-% Declare tables
-Percent_Time_Frozen = [NaN];
-Percent_Time_Tremor_Walking = [NaN];
-Percent_Time_Tremor_NOWalking = [NaN];
-Tremor_Level = [NaN];
-Brady_Level = [NaN];
-Dysk_Level = [NaN];
-
-cd('F:\Projet RPQ\Extracted_Data')
-save([Task '_Percent_Time_Frozen.mat'],'Percent_Time_Frozen')
-save([Task '_Percent_Time_Tremor_Walking.mat'],'Percent_Time_Tremor_Walking')
-save([Task '_Percent_Time_Tremor_NOWalking.mat'],'Percent_Time_Tremor_NOWalking')
-save([Task '_Tremor_Level.mat'],'Tremor_Level')
-save([Task '_Brady_Level.mat'],'Brady_Level')
-save([Task '_Dysk_Level.mat'],'Dysk_Level')
+% % Declare tables
+% Percent_Time_Frozen = [NaN];
+% Percent_Time_Tremor_Walking = [NaN];
+% Percent_Time_Tremor_NOWalking = [NaN];
+% Tremor_Level = [NaN];
+% Brady_Level = [NaN];
+% Dysk_Level = [NaN];
+% 
+% cd('F:\Projet RPQ\Extracted_Data')
+% save([Task '_Percent_Time_Frozen.mat'],'Percent_Time_Frozen')
+% save([Task '_Percent_Time_Tremor_Walking.mat'],'Percent_Time_Tremor_Walking')
+% save([Task '_Percent_Time_Tremor_NOWalking.mat'],'Percent_Time_Tremor_NOWalking')
+% save([Task '_Tremor_Level.mat'],'Tremor_Level')
+% save([Task '_Brady_Level.mat'],'Brady_Level')
+% save([Task '_Dysk_Level.mat'],'Dysk_Level')
 
 % Participant to load
 % Participant = 3;
-for Participant = 2:9
+for Participant = 5:14
     if Participant < 10
         Participant_Name = sprintf('P0%s',num2str(Participant));
     else
@@ -57,7 +57,7 @@ for Participant = 2:9
     % acc_vect = Module(Watch_Data.Ankle.Wrist_Raw_Accelerometer);
     % gyr_vect = Module(Watch_Data.Ankle.Wrist_Raw_Gyro);
 
-    acc_ankle_vertical = Watch_Data.Ankle.Wrist_Raw_Accelerometer(:,1);
+    acc_ankle_vertical = Watch_Data.Ankle.Free_Acceleration(:,1);
     gyr_ankle_vertical = Watch_Data.Ankle.Wrist_Raw_Gyro(:,1);
 
     % figure; subplot(2,1,1); plot(acc_vect);
@@ -66,7 +66,7 @@ for Participant = 2:9
     NpeaksToDetect = 2;
     RemoveThreePeaks = 0;
     showplot = 0;
-    details = 0;
+    details = 1;
     if Participant == 2 & Task(1:3) == 'TUG'
         [TaskSeg, TurnSeg, SegNOWalking, Number_of_Steps] = RPQ_ThreePeaksDetection(acc_ankle_vertical, gyr_ankle_vertical, Freq, 9, 1, details); % P2
     else
@@ -76,7 +76,7 @@ for Participant = 2:9
 
 % %% Detect walking periods
 % config.acc.Fe = 50;
-%
+% 
 % config.stepcounter.pks_min_dist = 50; % Inter peak distance (adj for walking)
 % config.stepcounter.pks_min_height = 0.2; % Height of individual peaks (peaks = step)
 % config.stepcounter.mov_avg = 30; % Window size for moving avg window
@@ -89,12 +89,12 @@ for Participant = 2:9
 % config.stepcounter.freq_amp_coeff = 10; % Check the # of harmonics with high amp and high freq above this threshold
 % config.stepcounter.fft_Hz_thresh = 3; % "high freq treshold to find harmonics for the freq_amp_coeff
 % config.stepcounter.fft_Amp_thresh = 0.02; % "high amplitude threshold to find harmonics for the freq_amp_coeff
-%
+% 
 % stepThresh = 1;
-%
+% 
 % [totalStep, totalCad, numberOfStepPeriods, newLocs] = ...
-%     step_detectAG_v2022(acc_vect(TaskSeg(1,1):TaskSeg(1,2)), config, stepThresh);
-%
+%     step_detectAG_v2022(acc_ankle_vertical, config, stepThresh);
+% 
 % figure;
 % plot(acc_vect(TaskSeg(1,1):TaskSeg(1,2)), 'color', [.5 .5 .5]);
 % hold on,
@@ -105,10 +105,12 @@ for Participant = 2:9
 % title([num2str(totalStep) ' pas, cad:', num2str(totalCad), ', detected step periods: ' num2str(numberOfStepPeriods)]);
 
 %% Data processing
-acc_ankle = Watch_Data.Ankle.Wrist_Raw_Accelerometer;
+Raw_acc_ankle = Watch_Data.Ankle.Wrist_Raw_Accelerometer;
+acc_ankle = Watch_Data.Ankle.Free_Acceleration;
 gyr_ankle = Watch_Data.Ankle.Wrist_Raw_Gyro;
 
-acc_wrist = Watch_Data.Wrist.Wrist_Raw_Accelerometer;
+Raw_acc_wrist = Watch_Data.Wrist.Wrist_Raw_Accelerometer;
+acc_wrist = Watch_Data.Wrist.Free_Acceleration;
 gyr_wrist = Watch_Data.Wrist.Wrist_Raw_Gyro;
 
 % Filter Data
@@ -122,17 +124,20 @@ Filtre_gyr_wrist = filtfilt(b,a,gyr_wrist);
 % for iaxe = 1:3
 %     figure(1); subplot(3,1,iaxe); plot((acc_ankle(:,iaxe)))
 %     figure(2); subplot(3,1,iaxe); plot((Filtre_acc_ankle(:,iaxe)))
+%     figure(3); subplot(3,1,iaxe); plot((Raw_acc_ankle(:,iaxe)))
 %     % figure(2); subplot(3,1,iaxe); plot(Filtre_gyr_ankle(:,iaxe))
 % end
+% spec_fft(acc_ankle(:,1),50,1)
+% spec_fft(Raw_acc_ankle(:,1),50,1)
 
 % Apply CWT to acc. data
 axe = {'x','y','z'};
 for iaxe = 1:length(axe)
-    [coefcwt, freq] = cwt(Filtre_acc_ankle(:,iaxe),'amor',Freq);
+    [coefcwt, freq] = cwt(acc_ankle(:,iaxe),'amor',Freq);
     assignin('base', ['PSD_' axe{iaxe} '_ankle'], abs(coefcwt).^2)
     assignin('base', ['f' axe{iaxe} '_ankle'], freq)
 
-    [coefcwt, freq] = cwt(Filtre_acc_wrist(:,iaxe),'amor',Freq);
+    [coefcwt, freq] = cwt(acc_wrist(:,iaxe),'amor',Freq);
     assignin('base', ['PSD_' axe{iaxe} '_wrist'], abs(coefcwt).^2)
     assignin('base', ['f' axe{iaxe} '_wrist'], freq)
 end

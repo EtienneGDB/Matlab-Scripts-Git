@@ -69,6 +69,7 @@ if WATCH
     FileNames = {'Wrist_Raw_Accelerometer', 'Wrist_Raw_Gyro'};
     Watch_allData = [];
     Time_allData = [];
+    rawTime_allData = [];
     watchFolder = dir(['F:\Projet RPQ\ExportedData\Watch\RPQProjectHomeXsens\P', num2str(Participant) ,'\Recordsets\*H*']);
     for iwatchFolder = 1:length(watchFolder)
         for iFileNames = 1:length(FileNames)
@@ -94,9 +95,11 @@ if WATCH
                 FiltreGravity = filtfilt(b,a,WatchData_of_Interest);
                 Watch_allData.(watchFolder(iwatchFolder).name).(FileNames{iFileNames}) = FiltreGravity;
                 Time_allData.(watchFolder(iwatchFolder).name).(FileNames{iFileNames}) = Time;
+                rawTime_allData.(watchFolder(iwatchFolder).name).(FileNames{iFileNames}) = unixTime;
             else
                 Watch_allData.(watchFolder(iwatchFolder).name).(FileNames{iFileNames}) = WatchData_of_Interest;
                 Time_allData.(watchFolder(iwatchFolder).name).(FileNames{iFileNames}) = Time;
+                rawTime_allData.(watchFolder(iwatchFolder).name).(FileNames{iFileNames}) = unixTime;
             end
 %             figure; plot(Time, sum(abs(Watch_allData.(watchFolder(iwatchFolder).name).(FileNames{iFileNames})),2))
 %             title([(watchFolder(iwatchFolder).name) ' ' FileNames{iFileNames}])
@@ -114,6 +117,7 @@ if WATCH
     cd([saveDir, '\Home\WatchXsens'])
     save(['P', num2str(Participant), '_WatchXsens_Home', '.mat'], 'Watch_allData')
     save(['P', num2str(Participant), '_TimeWatchXsens_Home', '.mat'], 'Time_allData')
+    save(['P', num2str(Participant), '_rawTimeWatchXsens_Home', '.mat'], 'rawTime_allData')
         
 end
 end
